@@ -37,3 +37,56 @@ jobs:
           path: dist/site
       - id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify the published site and required assets over HTTPS
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          python - <<'PY'
+          import os
+          import time
+          from urllib.request import Request, urlopen
+
+          base = os.environ["SITE_URL"].rstrip("/") + "/"
+          paths = [
+              "",
+              "assets/style.css",
+              "js/app.js",
+              "js/audit.js",
+              "js/report.js",
+              "js/template.js",
+              "js/catalog.js",
+              "js/library.js",
+              "js/community.js",
+              "vendor/jszip.min.js",
+              "data/approved-catalog.json",
+              "examples/sample_manuscript.docx",
+          ]
+          last_error = None
+          for attempt in range(24):
+              try:
+                  bodies = {}
+                  for path in paths:
+                      request = Request(base + path, headers={"User-Agent": "PaperAudit-Pages-Smoke-Test"})
+                      with urlopen(request, timeout=15) as response:
+                          body = response.read()
+                          if response.status != 200:
+                              raise RuntimeError(f"{path or '/'} returned HTTP {response.status}")
+                      if not body:
+                          raise RuntimeError(f"{path or '/'} returned an empty response")
+                      bodies[path] = body
+
+                  html = bodies[""]
+                  if b"PaperAudit" not in html or b'type="module"' not in html or b"js/app.js" not in html:
+                      raise RuntimeError("Published index.html is missing the PaperAudit title or ES Module entry point")
+                  print(f"Published site verified: {base}")
+                  for path in paths:
+                      print(f"HTTP 200  {path or '/'}  ({len(bodies[path])} bytes)")
+                  break
+              except Exception as exc:
+                  last_error = exc
+                  if attempt < 23:
+                      print(f"Public site not ready yet (attempt {attempt + 1}/24): {exc}")
+                      time.sleep(5)
+          else:
+              raise SystemExit(f"Published-site smoke test failed: {last_error}")
+          PY
