@@ -1,8 +1,10 @@
-# PaperAudit Web v0.4.1 (Pre-release)
+# PaperAudit Web v0.4.1
 
-> Browser-local paper and figure audits; not a journal compliance certification.
+> Free, open-source, browser-local manuscript checks; not a journal compliance certification.
 
-# PaperAudit Web (Beta 0.4.0)
+**Live website: https://wcwce00-glitch.github.io/PaperAudit/**
+
+# PaperAudit Web (Beta 0.4.1)
 
 [简体中文说明](README_zh.md)
 
@@ -12,11 +14,11 @@ PaperAudit Web checks ordinary figure/table numbering, literal in-text cross-ref
 
 **This is an early beta and not a journal compliance certification.** Neither false positives nor false negatives can be ruled out. Word fields, advanced numbering, vector graphics, external drawings, PDFs, TIFF and formula validation are not comprehensively supported.
 
-## No-install use (after publishing)
+## Try it now — no installation or account
 
-Open the GitHub Pages URL, drop a `.docx` file (or PNG/JPEG), select checks and minimum effective PPI, then press **开始检查**. Review the findings and optionally download an offline HTML or JSON report.
+Open the **[live PaperAudit website](https://wcwce00-glitch.github.io/PaperAudit/)**, click **使用示例论文体验** to try the synthetic sample, or choose a `.docx` manuscript (PNG/JPEG images are also supported). Select the checks and effective-PPI threshold, press **开始检查**, and optionally download an HTML or JSON report.
 
-**There is no live URL included with this source distribution.** The repository owner must publish it first. Do not invent or share a URL before GitHub Pages has deployed successfully.
+The site is published with GitHub Pages. The public URL is https://wcwce00-glitch.github.io/PaperAudit/.
 
 ## Local development
 
@@ -28,12 +30,9 @@ python -m http.server 8000
 
 Then open http://localhost:8000/. Python is only needed for local development; visitors to the published website do **not** need Python or any software installation.
 
-## Publish with GitHub Pages
+## Deployment and search indexing
 
-1. Create a public GitHub repository and upload this folder's **contents** to its `main` branch.
-2. In **Settings → Pages**, select **GitHub Actions** as the Build and deployment source.
-3. Push to `main`, open **Actions**, and wait for **Publish PaperAudit Web** to complete successfully.
-4. Find the actual published URL in the Pages settings or workflow deployment. Share that URL with users.
+The live site is deployed by the verified GitHub Actions workflow. Changes pushed to `main` run the tests before the Pages deployment. The site publishes a `robots.txt` and `sitemap.xml` to help search engines discover the homepage; search engines decide independently when to crawl and index it.
 
 `pages.yml` uses official `configure-pages`, `upload-pages-artifact`, and `deploy-pages` actions. No server/database/API key is needed. If your organization or account restricts GitHub Pages, adjust your repository settings accordingly.
 
