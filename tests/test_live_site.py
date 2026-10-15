@@ -10,7 +10,7 @@ from threading import Thread
 import os
 import shutil
 import pytest
-from playwright.sync_api import sync_playwright, Error as PlaywrightError
+from playwright.sync_api import sync_playwright, Error as PlaywrightError, expect
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -55,7 +55,8 @@ def test_actual_html_imports_es_modules_and_scans_sample(live_page):
     assert p.locator('.journal-card').count()>=7
     p.locator('#file-input').set_input_files(str(ROOT/'examples/sample_manuscript.docx'))
     p.locator('#run-audit').click()
-    p.wait_for_function('document.querySelector("#results").hidden === false',timeout=15000)
+    results = p.locator('#results')
+    results.wait_for(state='visible', timeout=15000)
     titles=p.locator('.finding-title').all_inner_texts()
     assert len(titles)==4,titles
     assert any('有效分辨率不足' in title for title in titles)
@@ -70,10 +71,13 @@ def test_real_browser_template_indexeddb_and_total_limit(live_page):
     p.locator('#template-input').set_input_files(str(ROOT/'examples/DEMO_NOT_OFFICIAL_template.docx'))
     p.locator('#share-journal').fill('Synthetic Journal')
     p.locator('#save-local-template').click()
-    p.wait_for_function("document.querySelector('#library-status').textContent.includes('已保存')")
-    assert p.locator('.local-template-row').count()==1
+    library_status = p.locator('#library-status')
+    expect(library_status).to_contain_text('已保存', timeout=10000)
+    template_rows = p.locator('.local-template-row')
+    assert template_rows.count()==1
     p.reload(wait_until='networkidle')
-    p.wait_for_function("document.querySelectorAll('.local-template-row').length === 1")
+    template_rows.first.wait_for(state='visible', timeout=10000)
+    assert template_rows.count()==1
     # Reject 11 files, all real browser files, not a mocked concatenated application.
     samples=[{'name':f'figure{i}.png','mimeType':'image/png','buffer':b'png-not-important-for-selection'} for i in range(11)]
     p.locator('#file-input').set_input_files(samples)
