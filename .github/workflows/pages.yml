@@ -60,6 +60,8 @@ jobs:
               "vendor/jszip.min.js",
               "data/approved-catalog.json",
               "examples/sample_manuscript.docx",
+              "robots.txt",
+              "sitemap.xml",
           ]
           last_error = None
           for attempt in range(24):
@@ -78,6 +80,12 @@ jobs:
                   html = bodies[""]
                   if b"PaperAudit" not in html or b'type="module"' not in html or b"js/app.js" not in html:
                       raise RuntimeError("Published index.html is missing the PaperAudit title or ES Module entry point")
+                  if b"Sitemap: https://wcwce00-glitch.github.io/PaperAudit/sitemap.xml" not in bodies["robots.txt"]:
+                      raise RuntimeError("robots.txt is missing the public sitemap URL")
+                  if b"<loc>https://wcwce00-glitch.github.io/PaperAudit/</loc>" not in bodies["sitemap.xml"]:
+                      raise RuntimeError("sitemap.xml is missing the canonical homepage URL")
+                  if b'rel="canonical"' not in html or b"og:title" not in html:
+                      raise RuntimeError("Published homepage is missing canonical/Open Graph metadata")
                   print(f"Published site verified: {base}")
                   for path in paths:
                       print(f"HTTP 200  {path or '/'}  ({len(bodies[path])} bytes)")
