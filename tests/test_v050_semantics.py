@@ -138,3 +138,33 @@ def test_builtin_profile_works_without_template(local_page):
     assert '电气' in actual['name']
     assert actual['stats']['total']>=6
     assert actual['hasAi'] is False
+
+def test_chinese_guidelines_keep_verbatim_source_and_unknown_checks_as_review(local_page):
+    loaded_files(local_page)
+    guide="摘要不得超过200字。\\n请删除所有模板占位文字。\\n论文写作请遵循会议作者指南。".encode("utf-8")
+    local_page.locator("#template").set_input_files({
+        "name":"synthetic-cn-guide.txt",
+        "mimeType":"text/plain",
+        "buffer":guide,
+    })
+    src=module_url("rules-engine.js")
+    actual=local_page.evaluate("""async src => {
+      const m=await import(src);
+      const a=await m.createRulesAudit(
+        document.querySelector("#paper").files[0],
+        {templateFile:document.querySelector("#template").files[0]}
+      );
+      return a.requirements.map(x=>({
+        id:x.id,check:x.check,originalText:x.originalText,sourceFile:x.sourceFile,
+        sourceParagraph:x.sourceParagraph,actualValue:x.actualValue,status:x.status,
+        recommendation:x.recommendation,evidence:x.evidence
+      }));
+    }""",src)
+    assert any(x["originalText"]=="摘要不得超过200字。" for x in actual)
+    assert any(x["originalText"]=="请删除所有模板占位文字。" for x in actual)
+    assert any(x["originalText"]=="论文写作请遵循会议作者指南。" for x in actual)
+    assert all(x["sourceFile"]=="synthetic-cn-guide.txt" for x in actual)
+    assert all(x["originalText"] and x["actualValue"] and x["recommendation"] for x in actual)
+    assert all(x["status"] in ("pass","fail","review") for x in actual)
+    assert any(x["check"]=="manual" and x["status"]=="review" for x in actual)
+    assert all(x["status"]!="fail" for x in actual if x["check"]=="manual")
