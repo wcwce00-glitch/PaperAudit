@@ -62,9 +62,9 @@ def test_real_webllm_load_and_candidate_extraction(site,tmp_path):
             page.wait_for_function("""() => {
               const s=document.querySelector('#ai-status')?.textContent||'';
               return s.includes('本地 AI 提议')||s.includes('AI 暂不可用');
-            }""",timeout=900000,polling=1000)
+            }""",timeout=240000,polling=1000)
         except PlaywrightTimeoutError:
-            pytest.fail("WebLLM model load/inference timed out. Status: "+status.inner_text()[:350])
+            pytest.fail("WebLLM model load/inference did not finish within 4 minutes. Status: "+status.inner_text()[:350])
         state=status.inner_text()
         assert state.startswith("本地 AI 提议"),"Real WebLLM model load or inference failed: "+state[:500]
         m=re.search(r"本地 AI 提议\s+(\d+)\s+条",state)
