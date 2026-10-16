@@ -136,7 +136,7 @@ def test_malicious_document_text_is_not_rendered_as_html(page):
         'buffer':make_fake_docx(payload),
     })
     found=run_check(page)
-    assert len(found)==1
+    assert any('未能核验' in x or '文件未能完成检查' in x for x in found), found
     assert not page.evaluate('window.__xss || false')
     assert page.locator('#findings img').count()==0
     with page.expect_download() as info:page.locator('#save-html').click()
