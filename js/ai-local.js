@@ -24,7 +24,7 @@ export async function suggestRequirementsWithLocalAI(templateText,progress=()=>{
   const response=await engine.chat.completions.create({messages:[
    {role:"system",content:"你是学术模板规范摘录助手。只从给定原文抽取明确可追溯的投稿格式要求。用 JSON 数组输出最多3项，每项只含 title 与 text。text 必须是输入中的逐字连续片段，不能改写或编造。不要判定论文是否合规。若没有明确要求，输出 []。"},
    {role:"user",content:"请摘录本段中的明确要求，返回 JSON 数组：\n"+chunks[i].text}
-  ],temperature:0,max_tokens:380});
+  ],temperature:0,max_tokens:128});
   const output=response.choices&&response.choices[0]&&response.choices[0].message&&response.choices[0].message.content||"";
   for(const row of parseRows(output)){
    if(!row||typeof row.text!=="string"||row.text.trim().length<8||!chunks[i].text.includes(row.text)||seen.has(row.text))continue;
