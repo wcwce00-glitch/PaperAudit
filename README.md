@@ -1,18 +1,54 @@
-# PaperAudit Web v0.4.1
+# PaperAudit — Privacy-first DOCX preflight for research papers
 
-> Free, open-source, browser-local manuscript checks; not a journal compliance certification.
+[![CI](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/ci.yml)
+[![GitHub Pages](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/pages.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[Live demo](https://wcwce00-glitch.github.io/PaperAudit/) · [简体中文](README_zh.md) · [Report a bug](https://github.com/wcwce00-glitch/PaperAudit/issues/new)
 
-**Live website: https://wcwce00-glitch.github.io/PaperAudit/**
+**A free, open-source, no-install browser tool for checking Word manuscripts before submission.**
 
-# PaperAudit Web (Beta 0.4.1)
+PaperAudit helps researchers catch common DOCX preflight problems: figure/table labels and references, bracket-numbered citations, embedded raster-image effective PPI, and selected template requirements. It generates a standalone HTML or JSON report. It is a preflight assistant—not a publisher's validator, plagiarism detector, or scientific reviewer.
 
-[简体中文说明](README_zh.md)
+> **Current release vs. preview:** The public website is still the approved stable build on `main`. The v0.5.0 semantic OOXML upgrade is under review in [Pull Request #3](https://github.com/wcwce00-glitch/PaperAudit/pulls/3); it is not released until the PR is reviewed and merged.
 
-**A local-first, no-login, browser-based manuscript pre-submission checker.**
+## Try it in your browser
 
-PaperAudit Web checks ordinary figure/table numbering, literal in-text cross-references, bracket-numbered citations, and embedded PNG/JPEG effective PPI in a DOCX file. It also inspects PNG/JPEG dimensions. All user files are processed locally in the browser and are not sent to a server.
+**[Open PaperAudit](https://wcwce00-glitch.github.io/PaperAudit/)** — no account, server setup, or software installation required for normal checks. Use the built-in synthetic example first, then try a copy of a DOCX you are allowed to process.
 
-**This is an early beta and not a journal compliance certification.** Neither false positives nor false negatives can be ruled out. Word fields, advanced numbering, vector graphics, external drawings, PDFs, TIFF and formula validation are not comprehensively supported.
+## What it checks
+
+- **DOCX structure:** common figure/table captions, textual cross-references, and bracket-numbered references.
+- **Image quality hints:** effective PPI for supported embedded PNG/JPEG images when Word provides usable display dimensions.
+- **Template comparison (v0.5 preview):** Strict and Transitional OOXML parsing, candidate requirements with source provenance, observed values, judgement and recommendations.
+- **Safer uncertainty:** checks that cannot be verified reliably should be marked for review—not presented as confirmed violations.
+- **Portable reports:** export results to standalone HTML or JSON for offline review.
+
+## Privacy by default
+
+- Normal audits run in your browser; manuscript files are not uploaded to a PaperAudit server.
+- There is no telemetry or account system in the app.
+- The optional WebLLM experiment is **off by default**. When explicitly enabled, the browser downloads a runtime and model from third-party hosts; model inference is intended to run locally, but those asset hosts will receive ordinary download requests. AI-generated requirements remain suggestions for human review.
+- The public CI suite uses synthetic test documents only. Never commit unpublished papers, private templates, personal data, reports, or excerpts to a public repository.
+
+## Quick start for contributors
+
+```bash
+git clone https://github.com/wcwce00-glitch/PaperAudit.git
+cd PaperAudit
+python -m http.server 8000
+```
+
+Open `http://localhost:8000/`. Browsers typically block JavaScript ES modules when the page is opened directly from `file://`. Python is for local development only; public users open the hosted website.
+
+For tests and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md). The semantic v0.5 preview has synthetic DOCX regression tests and a separately triggered, expensive WebLLM smoke test.
+
+## Known limitations
+
+PaperAudit does not certify journal compliance. Complex SEQ/REF fields, chapter-specific numbering, all citation styles, vector/linked artwork, equations, PDF/LaTeX sources, visual figure placement, and every local-format override are not fully verified. A report with no warnings means only that enabled checks did not find a supported issue; it does not mean the manuscript is submission-ready.
+
+## Contribute or give feedback
+
+Reproducible bug reports, synthetic DOCX regression cases, accessibility feedback, and improvements to the rule engine are welcome. See the [roadmap](docs/roadmap.md), [contribution guide](CONTRIBUTING.md), [good first issues](https://github.com/wcwce00-glitch/PaperAudit/labels/good%20first%20issue), and [open issues](https://github.com/wcwce00-glitch/PaperAudit/issues). Software citation metadata is available in [CITATION.cff](CITATION.cff).
 
 ## Try it now — no installation or account
 
@@ -38,7 +74,7 @@ The live site is deployed by the verified GitHub Actions workflow. Changes pushe
 
 ## Security and privacy
 
-- No telemetry, accounts, uploads, external JavaScript CDNs or cloud/AI requests.
+- No telemetry, accounts, or PaperAudit upload service. The optional WebLLM experiment described above downloads static runtime/model assets only after explicit consent.
 - Bundled JSZip (MIT/GPLv3 dual license) parses Word's ZIP container. See `vendor/JSZip-LICENSE.md`.
 - Hard limit of 30 MB per uploaded file, and explicit safeguards for DOCX expanded content.
 - Text is displayed with DOM `textContent` and escaped in the generated standalone HTML report to prevent injecting document HTML.

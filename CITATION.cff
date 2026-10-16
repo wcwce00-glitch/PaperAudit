@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use PaperAudit in your research or software, please cite this repository."
+title: "PaperAudit: Privacy-first DOCX preflight for research manuscripts"
+type: software
+authors:
+  - name: "PaperAudit contributors"
+repository-code: "https://github.com/wcwce00-glitch/PaperAudit"
+url: "https://wcwce00-glitch.github.io/PaperAudit/"
+license: MIT
+abstract: >-
+  PaperAudit is a browser-based, open-source preflight assistant for research
+  manuscripts in Word DOCX format. It checks selected caption/reference patterns
+  and supported embedded image dimensions, and it emphasizes source-traceable
+  findings and explicit review states where automatic verification is unreliable.

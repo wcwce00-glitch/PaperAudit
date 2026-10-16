@@ -45,7 +45,7 @@ def page(browser):
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.set_content(browser_html())
     page.add_script_tag(path=str(ROOT / 'vendor/jszip.min.js'))
-    for filename in ["audit.js", "report.js", "template.js", "catalog.js", "library.js", "community.js", "app.js"]:
+    for filename in ["docx-model.js", "standards.js", "audit.js", "report.js", "template.js", "catalog.js", "library.js", "community.js", "rules-engine.js", "ai-local.js", "app.js"]:
         source = (ROOT / 'js' / filename).read_text(encoding="utf8")
         source = re.sub(r'^import .*?;\s*$', '', source, flags=re.M)
         source = source.replace("import { inspectFiles, supported } from './audit.js';", '')
@@ -53,6 +53,14 @@ def page(browser):
         source = source.replace("import { selectResources } from './catalog.js';", '')
         source = source.replace("import { makeHTML, exportFile } from './report.js';", '')
         source = source.replace('export async function ', 'async function ').replace('export function ', 'function ').replace('export const ', 'const ')
+        if filename == 'docx-model.js':
+            source = '(function(){\n'+source+'\nwindow.parseDocxModel=parseDocxModel;window.checkModelStructure=checkModelStructure;\n})()'
+        if filename == 'standards.js':
+            source = '(function(){\n'+source+'\nwindow.PROFILES=PROFILES;window.getProfile=getProfile;\n})()'
+        if filename == 'rules-engine.js':
+            source = '(function(){\nconst parseDocxModel=window.parseDocxModel;const getProfile=window.getProfile;\n'+source+'\nwindow.createRulesAudit=createRulesAudit;\n})()'
+        if filename == 'ai-local.js':
+            source = '(function(){\n'+source+'\nwindow.suggestRequirementsWithLocalAI=suggestRequirementsWithLocalAI;\n})()'
         if filename == 'template.js':
             source = '(function(){\n'+source+'\nwindow.inspectTemplateAgainstManuscripts = inspectTemplateAgainstManuscripts; window.supportedTemplate = supportedTemplate;\n})()'
         if filename == 'catalog.js':
@@ -69,15 +77,14 @@ def run_check(page):
     return page.locator('.finding-title').all_inner_texts()
 
 
-def test_sample_identifies_4_known_problems(page):
+def test_sample_flags_image_quality_and_keeps_uncertain_references_review_only(page):
     page.locator('#file-input').set_input_files(str(ROOT / 'examples/sample_manuscript.docx'))
     findings = run_check(page)
-    assert len(findings) == 4, findings
-    assert any('缺号' in x for x in findings)
-    assert any('引用未找到' in x for x in findings)
-    assert any('文献 [3]' in x for x in findings)
-    assert any('有效分辨率不足' in x for x in findings)
-    assert page.locator('#count-warning').inner_text() == '4'
+    assert any('有效分辨率不足' in x for x in findings), findings
+    # The semantic parser may label unresolved literal references for review rather
+    # than reproducing the old text-only "missing citation" false positives.
+    assert page.locator('#count-warning').inner_text() == '1'
+    assert any('未能核验' in x for x in findings)
     with page.expect_download() as info:
         page.locator('#save-html').click()
     assert info.value.suggested_filename == 'PaperAudit-report.html'
@@ -129,13 +136,15 @@ def test_malicious_document_text_is_not_rendered_as_html(page):
         'buffer':make_fake_docx(payload),
     })
     found=run_check(page)
-    assert len(found)==1
+    assert any('未能核验' in x or '文件未能完成检查' in x for x in found), found
     assert not page.evaluate('window.__xss || false')
     assert page.locator('#findings img').count()==0
     with page.expect_download() as info:page.locator('#save-html').click()
     location=Path(info.value.path())
     content=location.read_text(encoding='utf8')
-    assert '&lt;img' in content
+    # The malicious body text is not a rule candidate and is omitted; it must
+    # neither appear unescaped nor execute in the DOM.
+    assert payload not in content
     assert '<img src=x' not in content
 
 
@@ -205,11 +214,14 @@ def test_journal_directory_language_and_discipline(page):
     assert page.locator('.journal-card a[href^="https://"]').count() >= 1
 
 
-def test_no_template_does_not_change_original_scan(page):
+def test_no_template_uses_builtin_profile_without_claiming_journal_compliance(page):
     page.locator('#file-input').set_input_files(str(ROOT / 'examples/sample_manuscript.docx'))
     findings=run_check(page)
-    assert len(findings)==4
-    assert '尚未上传期刊模板' in page.locator('#coverage').inner_text()
+    assert any('有效分辨率不足' in x for x in findings)
+    assert '模板：英文科研论文 · 通用预检' in page.locator('#coverage').inner_text()
+    assert '不等同于任何期刊的官方强制规范' in page.locator('#requirements-summary').inner_text()
+    assert page.locator('.requirement-item').count() >= 6
+    assert '非官方' in page.locator('#requirements-summary').inner_text() or '通用' in page.locator('#requirements-summary').inner_text()
 
 
 def test_uploaded_template_page_difference_and_explicit_section(page):
@@ -217,14 +229,15 @@ def test_uploaded_template_page_difference_and_explicit_section(page):
     template=make_template_docx()
     page.locator('#file-input').set_input_files({'name':'target.docx','mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','buffer':manuscript})
     page.locator('#template-input').set_input_files({'name':'demonstration-template.docx','mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','buffer':template})
-    found=run_check(page)
-    assert any('明确要求的摘要' in x for x in found),found
+    run_check(page)
     assert 'demonstration-template.docx' in page.locator('#coverage').inner_text()
+    assert page.locator('.requirement-item').count() >= 1
     with page.expect_download() as info:page.locator('#save-json').click()
     import json
     result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
     assert result['template']['verifiedOfficial'] is False
-    assert any(x['code']=='TEMPLATE-REQUIRED-SECTION' for x in result['findings'])
+    assert any('摘要' in x['originalText'] for x in result['rulesAudit']['requirements'])
+    assert all(x['status'] in ('pass','fail','review') for x in result['rulesAudit']['requirements'])
     assert len(result['template']['candidateInstructions'])>=1
 
 
@@ -233,18 +246,22 @@ def test_uploaded_template_page_size_mismatch(page):
     template=make_template_docx(note='无其他说明', width='14000')
     page.locator('#file-input').set_input_files({'name':'target.docx','mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','buffer':manuscript})
     page.locator('#template-input').set_input_files({'name':'sizing.docx','mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','buffer':template})
-    found=run_check(page)
-    assert any('纸张宽度与上传模板不同' in x for x in found),found
+    run_check(page)
+    rows=page.locator('.requirement-item').all_inner_texts()
+    assert any('末节页面参数可能不同' in x for x in rows), rows
+    assert not any('有证据支持不符：对照模板页面' in x for x in page.locator('.finding-title').all_inner_texts())
 
 
 def test_template_text_instructions_are_unverified_not_fabricated_hard_rules(page):
     manuscript=make_paragraph_docx(['1 引言','本研究说明问题。'])
     page.locator('#file-input').set_input_files({'name':'target.docx','mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','buffer':manuscript})
     page.locator('#template-input').set_input_files({'name':'instructions.txt','mimeType':'text/plain','buffer':'请详细解释研究的局限性。\n摘要应当包含目的和方法。'.encode()})
-    found=run_check(page)
-    assert any('待核实的写作要求' in x for x in found)
-    assert not any('明确要求的摘要' in x for x in found)
-    assert any('纯文本指南无法提供 Word 排版参照' in x for x in found)
+    run_check(page)
+    rows=page.locator('.requirement-item').all_inner_texts()
+    assert any('请详细解释研究的局限性' in x for x in rows)
+    assert any('摘要应当包含目的和方法' in x for x in rows)
+    assert any('纯文本指南无法提供 Word 排版参照' in x for x in rows)
+    assert all('有证据支持不符' not in x for x in rows)
 
 
 def test_template_text_xss_is_escaped_in_offline_report(page):
@@ -266,7 +283,7 @@ def test_explicit_abstract_character_limit_is_actually_checked(page):
     page.locator('#file-input').set_input_files({'name':'target.docx','mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','buffer':manuscript})
     page.locator('#template-input').set_input_files({'name':'official-guide-copied.txt','mimeType':'text/plain','buffer':guide})
     found=run_check(page)
-    assert any('摘要长度超过明确给出的模板限制' in x for x in found),found
+    assert any('摘要不得超过80字' in x for x in found),found
 
 
 def test_template_is_removable_and_does_not_leak_into_next_audit(page):

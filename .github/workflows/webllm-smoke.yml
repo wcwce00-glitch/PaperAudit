@@ -1,0 +1,32 @@
+name: Optional WebLLM hardware smoke test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  webllm-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install browser test tools
+        run: |
+          python -m pip install pytest playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Run real WebLLM model load and inference with a synthetic Strict DOCX
+        env:
+          PAPERAUDIT_RUN_WEBLLM_SMOKE: "1"
+        run: python -m pytest tests/test_ai_webllm.py -q -s
