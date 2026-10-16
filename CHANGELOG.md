@@ -6,7 +6,8 @@
 - Add built-in language/discipline preflight profiles for use without an uploaded template. These are community-maintained generic checks, not official journal rules.
 - Add per-requirement source text, file/paragraph provenance, observed value, evidence, judgement and recommendation to on-screen and downloadable reports.
 - Add opt-in browser-local WebLLM/Qwen candidate extraction; candidates are source-checked and always remain review-only.
-- Add synthetic Strict OOXML and HTTP integration tests. The actual WebLLM smoke test is attempted in CI using only a synthetic template.
+- Add synthetic Strict OOXML and HTTP integration tests.
+- Separate the expensive real WebLLM test into a manually triggered workflow so software-WebGPU shader timeouts do not block deterministic PR checks. Actual model inference remains an experimental, not yet validated capability in the available CI runner.
 - Add a post-deploy smoke check for the semantic modules, WebLLM CSP configuration, robots.txt and sitemap.xml.
 - The v0.5.0-preview branch does not change the published website until this PR is reviewed and merged.
 
