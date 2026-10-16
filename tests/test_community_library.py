@@ -59,7 +59,15 @@ def page(chromium):
         code=(ROOT/'js'/name).read_text(encoding='utf8')
         code=re.sub(r'^import .*?;\s*$', '', code, flags=re.M)
         code=code.replace('export async function ','async function ').replace('export function ','function ').replace('export const ','const ')
-        if name=='template.js':
+        if name=='docx-model.js':
+            code='(function(){\\n'+code+'\\nwindow.parseDocxModel=parseDocxModel;window.checkModelStructure=checkModelStructure;\\n})()'
+        if name=='standards.js':
+            code='(function(){\\n'+code+'\\nwindow.PROFILES=PROFILES;window.getProfile=getProfile;\\n})()'
+        if name=='rules-engine.js':
+            code='(function(){\\nconst parseDocxModel=window.parseDocxModel;const getProfile=window.getProfile;\\n'+code+'\\nwindow.createRulesAudit=createRulesAudit;\\n})()'
+        if name=='ai-local.js':
+            code='(function(){\\n'+code+'\\nwindow.suggestRequirementsWithLocalAI=suggestRequirementsWithLocalAI;\\n})()'
+                if name=='template.js':
             code='(function(){\n'+code+'\nwindow.inspectTemplateAgainstManuscripts=inspectTemplateAgainstManuscripts;window.supportedTemplate=supportedTemplate;})()'
         if name=='catalog.js':
             code='(function(){\n'+code+'\nwindow.selectResources=selectResources;window.setApprovedResources=setApprovedResources;})()'
