@@ -54,14 +54,14 @@ def page(browser):
         source = source.replace("import { makeHTML, exportFile } from './report.js';", '')
         source = source.replace('export async function ', 'async function ').replace('export function ', 'function ').replace('export const ', 'const ')
         if filename == 'docx-model.js':
-            source = '(function(){\\n'+source+'\\nwindow.parseDocxModel=parseDocxModel;window.checkModelStructure=checkModelStructure;\\n})()'
+            source = '(function(){\n'+source+'\nwindow.parseDocxModel=parseDocxModel;window.checkModelStructure=checkModelStructure;\n})()'
         if filename == 'standards.js':
-            source = '(function(){\\n'+source+'\\nwindow.PROFILES=PROFILES;window.getProfile=getProfile;\\n})()'
+            source = '(function(){\n'+source+'\nwindow.PROFILES=PROFILES;window.getProfile=getProfile;\n})()'
         if filename == 'rules-engine.js':
-            source = '(function(){\\nconst parseDocxModel=window.parseDocxModel;const getProfile=window.getProfile;\\n'+source+'\\nwindow.createRulesAudit=createRulesAudit;\\n})()'
+            source = '(function(){\nconst parseDocxModel=window.parseDocxModel;const getProfile=window.getProfile;\n'+source+'\nwindow.createRulesAudit=createRulesAudit;\n})()'
         if filename == 'ai-local.js':
-            source = '(function(){\\n'+source+'\\nwindow.suggestRequirementsWithLocalAI=suggestRequirementsWithLocalAI;\\n})()'
-                if filename == 'template.js':
+            source = '(function(){\n'+source+'\nwindow.suggestRequirementsWithLocalAI=suggestRequirementsWithLocalAI;\n})()'
+        if filename == 'template.js':
             source = '(function(){\n'+source+'\nwindow.inspectTemplateAgainstManuscripts = inspectTemplateAgainstManuscripts; window.supportedTemplate = supportedTemplate;\n})()'
         if filename == 'catalog.js':
             source = '(function(){\n'+source+'\nwindow.selectResources = selectResources;window.setApprovedResources=setApprovedResources;\n})()'
