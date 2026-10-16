@@ -74,7 +74,7 @@ function renderRequirements(audit){
   if(!area||!target)return;
   target.replaceChildren();area.hidden=!audit;
   if(!audit)return;
-  el('requirements-summary').textContent='审核依据：'+audit.name+'。共 '+audit.stats.total+' 条：已核查符合 '+audit.stats.pass+'，确认不符 '+audit.stats.fail+'，待核验 '+audit.stats.review+'。无法可靠判断的项目不会被报告为违规。';
+  el('requirements-summary').textContent='审核依据：'+audit.name+'。来源说明：'+audit.source+'。共 '+audit.stats.total+' 条：已核查符合 '+audit.stats.pass+'，确认不符 '+audit.stats.fail+'，待核验 '+audit.stats.review+'。无法可靠判断的项目不会被报告为违规。';
   for(const rule of audit.requirements){
     const item=document.createElement('article');item.className='requirement-item';
     const head=document.createElement('div');head.className='rq-head';
