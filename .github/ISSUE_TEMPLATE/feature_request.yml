@@ -1,0 +1,29 @@
+name: Feature request
+description: Propose a narrowly scoped improvement for research manuscript preflight.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the user problem and acceptance criteria. Do not upload or quote unpublished manuscripts or non-public publisher templates.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      placeholder: What cannot a researcher do safely or reliably today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and synthetic test case
+      description: Include a small, synthetic example if this changes parsing or rule detection.
+    validations:
+      required: true
