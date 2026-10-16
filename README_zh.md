@@ -1,31 +1,28 @@
-# PaperAudit Web v0.5.0-preview（候选升级版）
+# PaperAudit — 浏览器本地科研论文 DOCX 预检工具
 
-> 免费开源、浏览器本地处理的科研论文投稿前检查工具；不提供期刊合规认证。
+[![CI](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/ci.yml)
+[![GitHub Pages](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/pages.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**发布状态：** v0.5.0-preview 正在 [Pull Request #3](https://github.com/wcwce00-glitch/PaperAudit/pulls/3) 中验收。当前已部署网站继续保持已批准的稳定版本，直到 PR 审查并合并。
+**免费开源、免安装的 Word 论文投稿前预检工具。** [立即打开在线版](https://wcwce00-glitch.github.io/PaperAudit/) · [English README](README.md) · [报告 Bug](https://github.com/wcwce00-glitch/PaperAudit/issues/new)
 
-**在线使用：<https://wcwce00-glitch.github.io/PaperAudit/>**
+PaperAudit 帮助科研人员提前发现部分 DOCX 常见问题：图题/表题与正文中的文字引用、数字型参考文献、支持的内嵌 PNG/JPEG 图片有效 PPI，并导出独立 HTML 或 JSON 报告。它不代替期刊官方审稿、Word 最终排版或科学内容审查。
 
-# PaperAudit Web · 免安装科研论文检查器（Beta 0.4.1）
+> **版本说明：** 当前在线网站仍是已批准的稳定版本。v0.5.0 Strict OOXML 语义升级正在 [Pull Request #3](https://github.com/wcwce00-glitch/PaperAudit/pulls/3) 中验收；尚未发布到在线网站。
 
-## 这是什么？
+## 主要特点
 
-打开网页后直接选择 Word DOCX 论文，检查常规图表编号是否缺失或重复、正文里的图表引用是否有对应图题、数字型参考文献是否能匹配到条目，以及 Word 内嵌 PNG/JPEG 的**有效 PPI** 是否达到用户设置的要求。还可以检查独立 PNG/JPEG 图片的像素尺寸。新版还能**上传目标期刊 DOCX / DOTX 模板**（或 TXT/MD 格式的作者指南），对照 DOCX 可解析的纸张尺寸、页边距、Normal 默认字号/字体，并列出模板里的候选写作要求。若指南明确给出“摘要不得超过 N 字/words”等约束且正文可提取，就做相应的数量核对；其他写作质量与科学内容仍需人工复核。最后提供离线 HTML / JSON 报告。
+- **本地优先：** 普通论文检查在浏览器里执行，PaperAudit 不提供论文上传服务，也没有遥测或账号系统。
+- **可追溯的模板检查（v0.5 预览）：** 尝试解析 Transitional / Strict WordprocessingML，从模板逐条提取候选规范，并关联原文、来源、实际检测值、判断和建议。
+- **不确定就待核验：** 当前无法可靠验证的规则不会仅凭猜测判定为违规。
+- **可下载报告：** 生成可离线查看与分享的 HTML / JSON 报告。
+- **免费规则包：** 没上传模板时可选择通用学科规则，但通用规则并非任何期刊的官方投稿要求。
 
-**没有模板也能用：** 在网页下方按研究方向与中英文筛选官方期刊/出版社作者资源入口。链接通向正式网站的“作者指南/模板入口”，不承诺所有刊物都提供可下载的 Word 模板。
+## 隐私边界
 
-**无账号、无需 Python。** 输入的论文文件在浏览器本地解析，不会因普通检查自动上传。网站已通过 GitHub Pages 正式发布，任何人都可以打开 **<https://wcwce00-glitch.github.io/PaperAudit/>** 直接使用。
+默认检查不会将论文上传到 PaperAudit 服务器。可选的 WebLLM 本地 AI 实验默认关闭；用户明确启用后，浏览器会从第三方站点下载运行组件和模型权重。模型推理设计为在浏览器本地执行，但第三方资源站会收到普通文件下载请求。AI 提取的规则始终是待核验候选项。
 
-## 适合哪些人？
-
-写 Word 论文的学生、科研人员和期刊作者。它属于**投稿前辅助检查**，不是 Word 插件，也不是期刊官方审核工具。不能验证学术创新性、公式推导、研究结果或所有格式规范。
-
-## v0.5.0-preview 本次升级内容（仍待验收）
-
-- 支持解析 Transitional / Strict OOXML 的 Word 正文、段落样式、自动编号定义和页面参数。
-- 模板要求逐条展示原文、来源文件/段落、实际检测值、判断状态与修改建议。
-- 未上传模板时可选择学科/语言通用预检包；它们不是期刊官方强制规则。
-- 可选择启用 WebLLM + Qwen 本地候选规则提取实验；AI 候选始终标记为待核验。
+公开 GitHub Actions 只使用合成 DOCX 测试文档。**请勿把未发表论文、私有模板、个人信息、完整审计报告或摘录提交到公开仓库、Issue、PR 或 CI 日志。**
 
 ## 普通用户使用步骤
 
@@ -56,7 +53,7 @@ python -m http.server 8000
 - **当前只摘录并提示人工核对：** 必须解释的研究方法、利益冲突、伦理说明、讨论深度、参考文献规范等自然语言写作要求。**不会宣称已经理解并检查了全部要求**。
 - **目前不支持：** PDF 作者指南、Word 旧 `.doc`、LaTeX 源文件中的期刊格式自动比较；复杂 Word 分节、自动域、表格内模板要求和完整参考文献风格尚未覆盖。
 - **权威性：** 网页不鉴别上传模板是否为官方当前版本。必须以期刊官网最新版 Author Guidelines / 投稿须知优先；投稿初审和录用后排版要求可能不同。
-- **隐私：** 论文和模板均由浏览器本地处理；作者资源目录只展示公开的网址，点击外链会打开对应机构网站，但不会把你的论文传过去。
+- **隐私：** 普通检查在浏览器本地处理论文和模板；可选 WebLLM 功能会下载外部运行组件与模型，但不应把论文正文发送给推理 API。作者资源目录只展示公开网址，点击外链会打开对应机构网站。
 
 ### 演示模板
 
