@@ -4,7 +4,12 @@ import {getProfile} from "./standards.js";
 const INDICATORS=/(?:必须|应当|不得|不允许|禁止|至少|至多|不得超过|不超过|需(?:要)?|要求|宜|建议|避免|应|请|\bmust\b|\bshould\b|\bshall\b|\brequired\b|\bdo not\b|\bplease\b|\bavoid\b|\buse\b|\bkeep\b|\bdefine\b|\bplace\b|\bnumber\b|\bprovide\b|\bcapitalize\b|\bitalicize\b|\bspell out\b|\bdo not\b|\bno more than\b|\bat least\b|\bmaximum\b|\bminimum\b)/i;
 const STRICT=/(?:必须|应当|不得|不允许|禁止|须|请勿|\bmust\b|\bshall\b|\bdo not\b|\bno more than\b|\bat least\b)/i;
 function stable(s){return s.toLowerCase().replace(/\s+/g," ").trim();}
-function splitSentences(s){return s.replace(/\r/g," ").split(/(?<=[。！？;；])\s*|(?<=\.)\s+(?=[A-Z])/).map(x=>x.trim()).filter(Boolean);}
+function splitSentences(s){
+ // Split at the sentence boundary itself. Avoid "\\s*" on a zero-width
+ // boundary: engines may coalesce that empty match and keep adjacent Chinese
+ // instructions in one candidate.
+ return s.replace(/\r/g," ").split(/(?<=[。！？;；])|(?<=\.)\s+(?=[A-Z])/).map(x=>x.trim()).filter(Boolean);
+}
 function classify(s){
  if(/(?:hard\s+tabs|手动制表符|制表位)/i.test(s))return {check:"tabs",params:{}};
  if(/(?:any\s+kind\s+of\s+pagination|(?:不得|禁止).{0,12}(?:页码|页码编号))/i.test(s))return {check:"pagination",params:{}};
