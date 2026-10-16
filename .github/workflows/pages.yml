@@ -92,9 +92,9 @@ jobs:
                       raise RuntimeError("Published homepage is missing canonical/Open Graph metadata")
                   if b"'wasm-unsafe-eval'" not in html or b"'unsafe-eval'" in html:
                       raise RuntimeError("WebLLM CSP must permit WebAssembly without enabling unsafe-eval")
-                  for module in ("js/docx-model.js","js/rules-engine.js","js/standards.js","js/ai-local.js"):
-                      if module.encode() not in html and module == "js/ai-local.js":
-                          raise RuntimeError("Published app is missing local AI module import")
+                  app_source = bodies["js/app.js"]
+                  if b"rules-engine.js" not in app_source or b"ai-local.js" not in app_source or b"docx-model.js" not in app_source:
+                      raise RuntimeError("Published app is missing v0.5 semantic or AI module imports")
                   print(f"Published site verified: {base}")
                   for path in paths:
                       print(f"HTTP 200  {path or '/'}  ({len(bodies[path])} bytes)")
