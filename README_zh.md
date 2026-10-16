@@ -1,6 +1,8 @@
-# PaperAudit Web v0.4.1（已发布）
+# PaperAudit Web v0.5.0-preview（候选升级版）
 
 > 免费开源、浏览器本地处理的科研论文投稿前检查工具；不提供期刊合规认证。
+
+**发布状态：** v0.5.0-preview 正在 [Pull Request #3](https://github.com/wcwce00-glitch/PaperAudit/pulls/3) 中验收。当前已部署网站继续保持已批准的稳定版本，直到 PR 审查并合并。
 
 **在线使用：<https://wcwce00-glitch.github.io/PaperAudit/>**
 
@@ -17,6 +19,13 @@
 ## 适合哪些人？
 
 写 Word 论文的学生、科研人员和期刊作者。它属于**投稿前辅助检查**，不是 Word 插件，也不是期刊官方审核工具。不能验证学术创新性、公式推导、研究结果或所有格式规范。
+
+## v0.5.0-preview 本次升级内容（仍待验收）
+
+- 支持解析 Transitional / Strict OOXML 的 Word 正文、段落样式、自动编号定义和页面参数。
+- 模板要求逐条展示原文、来源文件/段落、实际检测值、判断状态与修改建议。
+- 未上传模板时可选择学科/语言通用预检包；它们不是期刊官方强制规则。
+- 可选择启用 WebLLM + Qwen 本地候选规则提取实验；AI 候选始终标记为待核验。
 
 ## 普通用户使用步骤
 
