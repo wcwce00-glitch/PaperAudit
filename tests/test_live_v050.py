@@ -88,6 +88,10 @@ def test_local_library_and_public_contribution(live_page):
     assert p.locator('.local-template-row').count()==1
     p.reload(wait_until='networkidle')
     p.locator('.local-template-row').first.wait_for(state='visible',timeout=10000)
+    # Form fields are intentionally not persisted across reloads.
+    p.locator('#share-journal').fill('Synthetic Journal')
+    p.locator('#share-discipline').select_option('general')
+    p.locator('#share-language').select_option('en')
     p.locator('#submission-details summary').click()
     p.locator('#share-source').fill('https://example.org/author-guide')
     p.locator('#share-confirm').check()
