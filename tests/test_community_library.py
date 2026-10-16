@@ -55,7 +55,7 @@ def page(chromium):
     p.set_content(browser_html())
     p.add_script_tag(content=MOCK_STORAGE_JS)
     p.add_script_tag(path=str(ROOT/'vendor/jszip.min.js'))
-    for name in ['audit.js','report.js','template.js','catalog.js','library.js','community.js','app.js']:
+    for name in ['docx-model.js','standards.js','audit.js','report.js','template.js','catalog.js','library.js','community.js','rules-engine.js','ai-local.js','app.js']:
         code=(ROOT/'js'/name).read_text(encoding='utf8')
         code=re.sub(r'^import .*?;\s*$', '', code, flags=re.M)
         code=code.replace('export async function ','async function ').replace('export function ','function ').replace('export const ','const ')
