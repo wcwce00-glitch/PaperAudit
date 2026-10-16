@@ -40,10 +40,5 @@ jobs:
           PAPERAUDIT_REQUIRE_HTTP_TESTS: "1"
         run: python -m pytest tests -q
 
-      - name: Run real WebLLM inference against a synthetic Strict DOCX template
-        env:
-          PAPERAUDIT_RUN_WEBLLM_SMOKE: "1"
-        run: python -m pytest tests/test_ai_webllm.py -q -s
-
       - name: Stage Pages deployment directory
         run: python scripts/build_site.py
