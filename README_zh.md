@@ -39,6 +39,10 @@ PaperAudit 帮助科研人员提前发现部分 DOCX 常见问题：图题/表�
 
 前端没有服务端，不需要购买 VPS 或数据库。网站源码公开，但上传给浏览器的私人论文不会自动成为 GitHub 仓库内容。**切勿把未发表论文文件直接提交到公开仓库。**
 
+## 参与贡献
+
+欢迎提交可复现的 Bug、合成 DOCX 测试样例、可访问性建议或浏览器兼容性报告。请先阅读 [贡献指南](CONTRIBUTING.md) 和 [开发路线图](docs/roadmap.md)，并查看 [可入门任务](https://github.com/wcwce00-glitch/PaperAudit/labels/good%20first%20issue) 与 [所有 Issues](https://github.com/wcwce00-glitch/PaperAudit/issues)。请勿上传未发表论文、私有模板、个人信息或私人审计报告。
+
 ## 给开发者：本地运行与测试
 
 ```bash
