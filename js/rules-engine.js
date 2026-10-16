@@ -1,7 +1,7 @@
 /* Conservative template requirement inventory. Unknown never means violated. */
 import {parseDocxModel} from "./docx-model.js";
 import {getProfile} from "./standards.js";
-const INDICATORS=/(?:必须|应当|不得|不允许|禁止|至少|至多|不得超过|不超过|需(?:要)?|要求|宜|建议|避免|应|请(?:勿|务必)|\bmust\b|\bshould\b|\bshall\b|\brequired\b|\bdo not\b|\bplease\b|\bavoid\b|\bno more than\b|\bat least\b|\bmaximum\b|\bminimum\b)/i;
+const INDICATORS=/(?:必须|应当|不得|不允许|禁止|至少|至多|不得超过|不超过|需(?:要)?|要求|宜|建议|避免|应|请(?:勿|务必)|请(?:\s|[，：:])|\bmust\b|\bshould\b|\bshall\b|\brequired\b|\bdo not\b|\bplease\b|\bavoid\b|\bno more than\b|\bat least\b|\bmaximum\b|\bminimum\b)/i;
 const STRICT=/(?:必须|应当|不得|不允许|禁止|须|请勿|\bmust\b|\bshall\b|\bdo not\b|\bno more than\b|\bat least\b)/i;
 function stable(s){return s.toLowerCase().replace(/\s+/g," ").trim();}
 function splitSentences(s){return s.replace(/\r/g," ").split(/(?<=[。！？;；])\s*|(?<=\.)\s+(?=[A-Z])/).map(x=>x.trim()).filter(Boolean);}
