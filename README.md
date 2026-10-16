@@ -48,7 +48,7 @@ PaperAudit does not certify journal compliance. Complex SEQ/REF fields, chapter-
 
 ## Contribute or give feedback
 
-Reproducible bug reports, synthetic DOCX regression cases, accessibility feedback, and improvements to the rule engine are welcome. See [good first issues](https://github.com/wcwce00-glitch/PaperAudit/labels/good%20first%20issue) and [open issues](https://github.com/wcwce00-glitch/PaperAudit/issues).
+Reproducible bug reports, synthetic DOCX regression cases, accessibility feedback, and improvements to the rule engine are welcome. See the [roadmap](docs/roadmap.md), [contribution guide](CONTRIBUTING.md), [good first issues](https://github.com/wcwce00-glitch/PaperAudit/labels/good%20first%20issue), and [open issues](https://github.com/wcwce00-glitch/PaperAudit/issues). Software citation metadata is available in [CITATION.cff](CITATION.cff).
 
 ## Try it now — no installation or account
 
