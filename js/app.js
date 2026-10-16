@@ -226,7 +226,8 @@ el('run-audit').addEventListener('click',async()=>{
   const button=el('run-audit');button.disabled=true;button.textContent='正在检查，请稍候……';el('status').textContent='文件仅在浏览器本地处理';
   try {await new Promise(r=>setTimeout(r,30));lastResult=await inspectFiles(files,{captions:el('check-captions').checked,citations:el('check-citations').checked,images:el('check-images').checked,ppi});
     const docxFile=files.find(f=>/\.docx$/i.test(f.name));
-    if(docxFile){
+    const docxInspectionFailed=docxFile&&lastResult.findings.some(x=>x.code==='FILE-ERROR'&&x.location===docxFile.name);
+    if(docxFile&&!docxInspectionFailed){
       // The semantic parser supplies authoritative *counts* from styles/numbering.xml.
       // Suppress only legacy textual heuristics that conflict with that parsed model.
       const legacyCodes=new Set(['HEADING-GAP','CAP-DUPLICATE','CAP-GAP','REF-NOT-FOUND','CITE-SECTION-MISSING','CITE-NOT-FOUND','CITE-DUPLICATE','FIELDS-UNVERIFIED']);
