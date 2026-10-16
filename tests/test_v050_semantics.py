@@ -103,12 +103,13 @@ def test_word_numbering_yields_five_figures_two_tables_and_thirteen_references(l
 def test_strict_ooxml_template_and_rule_inventory(local_page):
     loaded_files(local_page)
     src=module_url('rules-engine.js')
-    actual=local_page.evaluate('''async src => {
+    docx_src=module_url('docx-model.js')
+    actual=local_page.evaluate('''async ({src,docx}) => {
       const m=await import(src);const paper=document.querySelector('#paper').files[0],template=document.querySelector('#template').files[0];
-      const model=await (await import(src.replace('rules-engine.js','docx-model.js'))).parseDocxModel(template);
+      const model=await (await import(docx)).parseDocxModel(template);
       const a=await m.createRulesAudit(paper,{templateFile:template});
       return {ns:model.namespace,paragraphs:model.paragraphs.length,total:a.stats.total,fail:a.stats.fail,types:a.requirements.map(x=>x.check),sources:a.requirements.map(x=>x.source),requirements:a.requirements};
-    }''',src)
+    }''',{"src":src,"docx":docx_src})
     assert actual['ns']=='http://purl.oclc.org/ooxml/wordprocessingml/main'
     assert actual['paragraphs']>=3
     assert actual['total']>=3
