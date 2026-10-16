@@ -1,6 +1,8 @@
 /* Optional in-browser WebLLM. Never uploads input to an inference API. */
 let engine=null;
-const MODEL="Qwen2.5-0.5B-Instruct-q4f16_1-MLC";
+// q4f32 avoids the shader-f16 feature required by the q4f16 build on
+// some software WebGPU adapters (e.g. CI's SwiftShader).
+const MODEL="Qwen2.5-0.5B-Instruct-q4f32_1-MLC";
 function parseRows(output){
  const text=String(output||"").trim();
  const first=text.indexOf("["),last=text.lastIndexOf("]");
