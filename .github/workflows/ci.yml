@@ -8,9 +8,15 @@ on:
 permissions:
   contents: read
 
+# Avoid accumulating stale red runs while a maintainer pushes successive fixes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
 
