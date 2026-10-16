@@ -45,7 +45,7 @@ def page(browser):
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.set_content(browser_html())
     page.add_script_tag(path=str(ROOT / 'vendor/jszip.min.js'))
-    for filename in ["audit.js", "report.js", "template.js", "catalog.js", "library.js", "community.js", "app.js"]:
+    for filename in ["docx-model.js", "standards.js", "audit.js", "report.js", "template.js", "catalog.js", "library.js", "community.js", "rules-engine.js", "ai-local.js", "app.js"]:
         source = (ROOT / 'js' / filename).read_text(encoding="utf8")
         source = re.sub(r'^import .*?;\s*$', '', source, flags=re.M)
         source = source.replace("import { inspectFiles, supported } from './audit.js';", '')
