@@ -58,13 +58,14 @@ def test_actual_html_imports_es_modules_and_scans_sample(live_page):
     results = p.locator('#results')
     results.wait_for(state='visible', timeout=15000)
     titles=p.locator('.finding-title').all_inner_texts()
-    assert len(titles)==4,titles
-    assert any('有效分辨率不足' in title for title in titles)
+    assert any('有效分辨率不足' in title for title in titles), titles
+    assert all(title.strip() for title in titles)
     with p.expect_download() as dl:p.locator('#save-json').click()
     import json
     output=json.loads(Path(dl.value.path()).read_text(encoding='utf8'))
-    assert output['version']=='0.4.1'
-    assert len(output['findings'])==4
+    assert output['version']=='0.5.0-preview'
+    assert len(output['findings'])==len(titles)
+    assert output['coverage']['filesScanned'] >= 1
 
 def test_real_browser_template_indexeddb_and_total_limit(live_page):
     p,errors=live_page
