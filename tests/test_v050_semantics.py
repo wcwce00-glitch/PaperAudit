@@ -141,7 +141,7 @@ def test_builtin_profile_works_without_template(local_page):
 
 def test_chinese_guidelines_keep_verbatim_source_and_unknown_checks_as_review(local_page):
     loaded_files(local_page)
-    guide="摘要不得超过200字。\\n请删除所有模板占位文字。\\n论文写作请遵循会议作者指南。".encode("utf-8")
+    guide="摘要不得超过200字。\n请删除所有模板占位文字。\n论文写作请遵循会议作者指南。".encode("utf-8")
     local_page.locator("#template").set_input_files({
         "name":"synthetic-cn-guide.txt",
         "mimeType":"text/plain",
