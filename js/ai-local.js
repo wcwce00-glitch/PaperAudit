@@ -13,8 +13,8 @@ export async function suggestRequirementsWithLocalAI(templateText,progress=()=>{
  if(!navigator.gpu)throw Error("此浏览器没有 WebGPU；请使用支持 WebGPU 的新版 Chrome/Edge，或只用基础规则引擎。");
  if(!String(templateText||"").trim())throw Error("模板没有可供提取的文字。");
  if(templateText.length>30000)throw Error("为避免小模型超出上下文窗口，本次只允许分析前 30000 个字符；请先分段筛选。");
- progress("正在加载免费本地 AI 运行组件……首次需要联网下载运行组件与模型（约数百 MB）。");
- const webllm=await import("https://esm.run/@mlc-ai/web-llm@0.2.85");
+ progress("正在加载固定版本 WebLLM 0.2.82 与免费本地模型……首次需要联网下载运行组件和权重（约数百 MB）。");
+ const webllm=await import("https://esm.run/@mlc-ai/web-llm@0.2.82");
  if(!webllm.prebuiltAppConfig||!webllm.prebuiltAppConfig.model_list.some(x=>x.model_id===MODEL))throw Error("固定版本的 WebLLM 未列出目标模型，已停止加载。");
  if(!engine)engine=await webllm.CreateMLCEngine(MODEL,{initProgressCallback:x=>progress(x.text||("模型加载 "+Math.round((x.progress||0)*100)+"%"))});
  const chunks=[];for(let i=0;i<templateText.length;i+=4200)chunks.push({offset:i,text:templateText.slice(i,i+4200)});
