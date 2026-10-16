@@ -1,6 +1,8 @@
-# PaperAudit Web v0.4.1
+# PaperAudit Web v0.5.0-preview (candidate)
 
 > Free, open-source, browser-local manuscript checks; not a journal compliance certification.
+
+**Release status:** v0.5.0-preview is under review in [PR #3](https://github.com/wcwce00-glitch/PaperAudit/pulls/3). The published Pages website stays on the currently approved version until review and merge.
 
 **Live website: https://wcwce00-glitch.github.io/PaperAudit/**
 
@@ -13,6 +15,21 @@
 PaperAudit Web checks ordinary figure/table numbering, literal in-text cross-references, bracket-numbered citations, and embedded PNG/JPEG effective PPI in a DOCX file. It also inspects PNG/JPEG dimensions. All user files are processed locally in the browser and are not sent to a server.
 
 **This is an early beta and not a journal compliance certification.** Neither false positives nor false negatives can be ruled out. Word fields, advanced numbering, vector graphics, external drawings, PDFs, TIFF and formula validation are not comprehensively supported.
+
+## Try the currently published website
+
+The live website at `https://wcwce00-glitch.github.io/PaperAudit/` remains the stable deployed build until this preview is accepted and merged.
+
+## v0.5.0-preview changes under review
+
+- Parse Transitional and Strict OOXML WordprocessingML, including `styles.xml` and `numbering.xml`.
+- Keep template requirements paired with source text, filename/paragraph provenance, observed value, review status and recommendation.
+- Offer general discipline/language preflight profiles when no template is supplied.
+- Offer an explicit opt-in WebLLM/Qwen browser-local candidate extraction experiment; AI candidates remain review-only.
+
+## Try the currently published website
+
+The live website at `https://wcwce00-glitch.github.io/PaperAudit/` remains the stable deployed build until this preview is accepted and merged.
 
 ## Try it now — no installation or account
 
