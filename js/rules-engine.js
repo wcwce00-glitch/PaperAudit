@@ -73,7 +73,7 @@ function checkRule(rule,manuscript,template){
    if(Math.abs(a-t)>tolerance)diffs.push("第 "+(i+1)+" 节 "+label+"（模板 "+t+"；论文 "+a+(key.endsWith("Twip")?" twips":"")+"）");
   }
   if(actual.length!==expected.length)diffs.push("分节数不同（模板 "+expected.length+"；论文 "+actual.length+"）");
-  if(diffs.length)return result("review","已检测到与上传模板的页面版式差异："+diffs.join("；"),"模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "), "确认模板适用于目标稿件及投稿阶段后，在 Word 中逐节修正页面尺寸、页边距或分栏；不同分节可能有合法用途。");
+  if(diffs.length)return result("review","已检测到与上传模板的页面版式差异（末节页面参数可能不同或其他分节有差异）："+diffs.join("；"),"模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "), "确认模板适用于目标稿件及投稿阶段后，在 Word 中逐节修正页面尺寸、页边距或分栏；不同分节可能有合法用途。");
   if(unknown.length)return result("review","已比较 "+count+" 对分节，但部分页面参数无法可靠读取。","无法读取："+unknown.join("、")+"；模板 "+expected.length+" 节，论文 "+actual.length+" 节。","在 Word 中逐节检查页面设置。");
   return result("pass","已比较 "+count+" 对分节的纸张尺寸、页边距和分栏；未发现超出容差的差异。","模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "),"当前可解析的页面参数与模板基本一致；仍需检查最终渲染和局部页面设置。");
  }
