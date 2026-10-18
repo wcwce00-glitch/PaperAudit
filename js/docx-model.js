@@ -7,7 +7,18 @@ function txt(n){return all(n,"t").map(x=>x.textContent||"").join("").trim();}
 function parseXml(s,part){const d=new DOMParser().parseFromString(s,"application/xml");if(d.getElementsByTagName("parsererror").length)throw Error(part+" XML 无法解析");return d;}
 function num(v){if(v===null||v===undefined||v==="")return null;const n=Number(v);return Number.isFinite(n)?n:null;}
 function twip(v){if(v===null)return null;const m=/^(-?\d+(?:\.\d+)?)(pt|in|cm|mm)?$/i.exec(String(v).trim());if(!m)return null;const n=Number(m[1]),u=(m[2]||"twip").toLowerCase();return u==="pt"?n*20:u==="in"?n*1440:u==="cm"?n*1440/2.54:u==="mm"?n*1440/25.4:n;}
-function props(n){const p=child(n,"pPr"),r=child(n,"rPr"),sp=child(p,"spacing"),ind=child(p,"ind"),f=child(r,"rFonts"),sz=num(attr(child(r,"sz"),"val"));return {font:attr(f,"ascii")||attr(f,"eastAsia")||null,fontEast:attr(f,"eastAsia")||null,fontSizePt:sz===null?null:sz/2,lineTwip:twip(attr(sp,"line")),lineRule:attr(sp,"lineRule"),beforeTwip:twip(attr(sp,"before")),afterTwip:twip(attr(sp,"after")),firstLineTwip:twip(attr(ind,"firstLine")),bold:!!child(r,"b")&&attr(child(r,"b"),"val")!=="0",italic:!!child(r,"i")&&attr(child(r,"i"),"val")!=="0"};}
+function props(n){
+ const p=child(n,"pPr"),r=child(n,"rPr"),sp=child(p,"spacing"),ind=child(p,"ind"),fonts=child(r,"rFonts"),sz=num(attr(child(r,"sz"),"val"));
+ const bool=(parent,name)=>{const node=child(parent,name);if(!node)return null;const v=attr(node,"val");return !["0","false","off","none"].includes(String(v||"").toLowerCase());};
+ return {
+  font:attr(fonts,"ascii")||attr(fonts,"eastAsia")||null,fontEast:attr(fonts,"eastAsia")||null,fontSizePt:sz===null?null:sz/2,
+  lineTwip:twip(attr(sp,"line")),lineRule:attr(sp,"lineRule"),beforeTwip:twip(attr(sp,"before")),afterTwip:twip(attr(sp,"after")),
+  firstLineTwip:twip(attr(ind,"firstLine")),leftTwip:twip(attr(ind,"left")),rightTwip:twip(attr(ind,"right")),hangingTwip:twip(attr(ind,"hanging")),
+  alignment:attr(child(p,"jc"),"val")||null,color:attr(child(r,"color"),"val")||null,underline:attr(child(r,"u"),"val")||null,
+  bold:bool(r,"b"),italic:bool(r,"i"),smallCaps:bool(r,"smallCaps"),allCaps:bool(r,"caps"),strike:bool(r,"strike"),
+  keepNext:bool(p,"keepNext"),keepLines:bool(p,"keepLines"),pageBreakBefore:bool(p,"pageBreakBefore"),outlineLevel:num(attr(child(p,"outlineLvl"),"val"))
+ };
+}
 function numPr(n){const q=child(child(n,"pPr"),"numPr");return {numId:attr(child(q,"numId"),"val"),level:num(attr(child(q,"ilvl"),"val"))||0};}
 function readStyles(d){const map=new Map();for(const s of all(d,"style")){const id=attr(s,"styleId");if(id)map.set(id,{id,name:attr(child(s,"name"),"val")||id,basedOn:attr(child(s,"basedOn"),"val"),props:props(s),...numPr(s)});}const defs=all(d,"docDefaults")[0],rd=child(defs,"rPrDefault"),pd=child(defs,"pPrDefault");return {map,defaultStyle:props({children:[...(rd?[...rd.children]:[]),...(pd?[...pd.children]:[])]})};}
 function styleProps(id,styles){const out=Object.assign({},styles.defaultStyle),chain=[],seen=new Set();let cur=id,depth=0;while(cur&&styles.map.has(cur)&&depth++<12&&!seen.has(cur)){seen.add(cur);const s=styles.map.get(cur);chain.unshift(s);cur=s.basedOn;}for(const s of chain)for(const k in s.props)if(s.props[k]!==null&&s.props[k]!==undefined)out[k]=s.props[k];return out;}
