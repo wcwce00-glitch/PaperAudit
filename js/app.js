@@ -77,7 +77,7 @@ function render(result){
   el('count-unverified').textContent=result.findings.filter(x=>x.level==='unverified').length;
   el('count-images').textContent=result.coverage.imagesChecked;
   const templateMode=!!result.template?.isUserTemplate || !!result.rulesAudit?.isUserTemplate;
-  el('coverage').textContent=`模式：${templateMode?'用户模板驱动核查':'通用预检规则包'} · 已扫描 ${result.coverage.filesScanned} 个文件 · 识别 ${result.coverage.paragraphs} 个段落 · 图题 ${result.coverage.figCaptions} · 表题 ${result.coverage.tableCaptions} · 可解析图片 ${result.coverage.imagesChecked}。${templateMode?`模板：${result.template?.name||result.rulesAudit?.name}（按用户提供材料作参照，未独立核实其官方权威性）；逐项核查 ${result.coverage.templateInstructions||0} 项。`:'未上传目标模板；使用所选通用预检规则。'}自动对照与无法可靠判断的项目会单独标注；仍需人工审阅。`;
+  el('coverage').textContent=`模式：${templateMode?'用户模板驱动核查':'通用预检规则包'} · 已扫描 ${result.coverage.filesScanned} 个文件 · 识别 ${result.coverage.paragraphs} 个段落 · 图题 ${result.coverage.figCaptions} · 表题 ${result.coverage.tableCaptions} · 可解析图片 ${result.coverage.imagesChecked}。${templateMode?`模板：${result.template?.name||result.rulesAudit?.name}（按用户提供材料作参照，未独立核实其官方权威性）；逐项核查 ${result.coverage.templateInstructions||0} 项。`:`未上传目标模板；使用通用预检规则包：${result.rulesAudit?.name||'所选规则'}。` }自动对照与无法可靠判断的项目会单独标注；仍需人工审阅。`;
   document.querySelectorAll('.filter').forEach(b=>{b.classList.toggle('active',b.dataset.filter==='all');});
   renderFindings(result,'all');
   renderRequirements(result.rulesAudit);
