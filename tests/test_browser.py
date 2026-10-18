@@ -261,7 +261,7 @@ def test_uploaded_template_page_size_mismatch(page):
 
 
 
-def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', margin='1440'):
+def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', margin='1440', alignment='left', line='240'):
     paragraphs = ''.join(
         '<w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r><w:t>' + escape(t) + '</w:t></w:r></w:p>'
         for t in lines
@@ -282,7 +282,7 @@ def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', ma
              '<w:rPr>'
              f'<w:rFonts w:ascii="{escape(font)}" w:eastAsia="{escape(font)}"/>'
              f'<w:sz w:val="{size}"/>'
-             '</w:rPr><w:pPr><w:spacing w:line="240" w:lineRule="auto" w:after="200"/></w:pPr></w:style>'
+             '</w:rPr><w:pPr><w:jc w:val="' + escape(alignment) + '"/><w:spacing w:line="' + escape(line) + '" w:lineRule="auto" w:after="200"/></w:pPr></w:style>'
              '</w:styles>')
     data = io.BytesIO()
     with zipfile.ZipFile(data, 'w') as z:
@@ -294,7 +294,7 @@ def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', ma
 def test_uploaded_template_drives_style_and_abstract_comparison(page):
     template = make_styled_docx(
         ['Abstract', 'Template placeholder paragraph.', 'The abstract must not exceed 10 words.'],
-        font='Times New Roman', size='20'
+        font='Times New Roman', size='20', alignment='center', line='240'
     )
     manuscript = make_styled_docx([
         'Abstract',
@@ -303,7 +303,7 @@ def test_uploaded_template_drives_style_and_abstract_comparison(page):
         'Keywords: template driven checking',
         '1 Introduction',
         'This is ordinary synthetic manuscript text.'
-    ], font='Arial', size='24')
+    ], font='Arial', size='24', alignment='both', line='360')
     page.locator('#file-input').set_input_files({
         'name':'synthetic-manuscript.docx',
         'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -319,6 +319,8 @@ def test_uploaded_template_drives_style_and_abstract_comparison(page):
     assert any('模板样式对照：Normal' in x for x in rows), rows
     assert any('Times New Roman' in x and 'Arial' in x for x in rows), rows
     assert any('10.0 pt' in x and '12.0 pt' in x for x in rows), rows
+    assert any('段落对齐（模板 居中；论文 两端对齐）' in x for x in rows), rows
+    assert any('1.00× 行距（auto' in x and '1.50× 行距（auto' in x for x in rows), rows
     with page.expect_download() as info:page.locator('#save-json').click()
     import json
     result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
