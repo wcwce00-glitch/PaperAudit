@@ -1,1 +1,8 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Try the live demo
+    url: https://wcwce00-glitch.github.io/PaperAudit/
+    about: Reproduce issues with the built-in synthetic sample before using any private document.
+  - name: Contribution and privacy guidelines
+    url: https://github.com/wcwce00-glitch/PaperAudit/blob/main/CONTRIBUTING.md
+    about: Do not attach unpublished manuscripts, private templates, personal information, or private reports.

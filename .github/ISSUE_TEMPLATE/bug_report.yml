@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible defect using a synthetic or public example.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not attach unpublished manuscripts, private publisher templates, personal data, or private audit reports. Use the built-in synthetic example or describe a minimal synthetic reproduction.
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Chrome 155 on Windows 11
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the enabled checks and use synthetic/public content only.
+      placeholder: "1. Open the demo...\n2. Enable caption checks...\n3. Run audit..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Share the finding code/message and synthetic evidence, not private document text.
+    validations:
+      required: true
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - False positive
+        - Missed problem
+        - Template parsing
+        - Report/UI
+        - Browser compatibility
+        - Other
+    validations:
+      required: true

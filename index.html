@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval' https://esm.run https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self' https://esm.run https://cdn.jsdelivr.net https://huggingface.co https://*.huggingface.co https://*.hf.co https://raw.githubusercontent.com; object-src 'none'; base-uri 'none'; form-action 'none'" />
   <meta name="description" content="PaperAudit 是免费的开源科研论文投稿前检查工具：在浏览器本地检查 Word DOCX 图表编号与引用、数字型参考文献、图片有效分辨率（PPI），对照期刊模板，并导出 HTML / JSON 报告。无需安装或注册，论文不自动上传。" />
   <meta name="keywords" content="PaperAudit, 科研论文检查, 论文格式检查, Word DOCX, 图表引用检查, 参考文献检查, 图片 PPI, 期刊模板, manuscript checker, academic paper formatting" />
   <link rel="canonical" href="https://wcwce00-glitch.github.io/PaperAudit/" />
@@ -17,14 +17,35 @@
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="PaperAudit — 科研论文投稿前检查" />
   <meta name="twitter:description" content="免费、免安装、浏览器本地处理的开源 Word 论文检查工具。" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "PaperAudit",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any",
+    "isAccessibleForFree": true,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "url": "https://wcwce00-glitch.github.io/PaperAudit/",
+    "description": "Free browser-based DOCX preflight assistant for research manuscripts. Checks common captions, cross-references, basic numeric citations and supported embedded image PPI. Normal document processing happens locally in the browser.",
+    "softwareVersion": "0.5.0-preview",
+    "featureList": [
+      "Browser-local DOCX preflight",
+      "Figure and table caption/reference checks",
+      "Basic bracket-numbered citation checks",
+      "Supported embedded PNG/JPEG effective PPI hints",
+      "HTML and JSON report export"
+    ]
+  }
+  </script>
   <title>PaperAudit — 免费科研论文格式检查工具（Word DOCX）</title>
   <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
   <header class="masthead">
     <div class="wrap header-row">
-      <a class="wordmark" href="./" aria-label="PaperAudit 首页"><span class="logo-mark">P<span>.</span></span> <span>PaperAudit</span><span class="version">BETA 0.4.1</span></a>
-      <nav aria-label="页面导航"><a href="#how">使用步骤</a><a href="#features">能检查什么</a><a href="#privacy">隐私说明</a></nav>
+      <a class="wordmark" href="./" aria-label="PaperAudit 首页"><span class="logo-mark">P<span>.</span></span> <span>PaperAudit</span><span class="version">PREVIEW 0.5.0</span></a>
+      <nav aria-label="页面导航"><a href="#how">使用步骤</a><a href="#features">能检查什么</a><a href="#privacy">隐私说明</a><a href="https://github.com/wcwce00-glitch/PaperAudit" target="_blank" rel="noopener noreferrer">GitHub 源码 ↗</a><a href="https://github.com/wcwce00-glitch/PaperAudit/issues/new" target="_blank" rel="noopener noreferrer">反馈问题 ↗</a></nav>
       <span class="top-pill"><span class="pulse"></span> Local-first · 无需登录</span>
     </div>
   </header>
@@ -34,6 +55,11 @@
         <h1>投稿之前，<br><em>先给论文做个体检。</em></h1>
         <p class="hero-sub">拖入 <strong>Word 论文</strong>，快速检查图表编号、正文引用、数字型参考文献、图片有效分辨率；还可选传目标期刊模板对照页面与写作要求。检测在浏览器中完成，论文无需上传。</p>
         <div class="hero-promises"><span>✓ 免安装</span><span>✓ 中文报告</span><span>✓ 文件不上传</span></div>
+        <div class="hero-actions" aria-label="开始使用和参与项目">
+          <a class="hero-action hero-action-primary" href="#start">立即免费体验 <span aria-hidden="true">↘</span></a>
+          <a class="hero-action hero-action-secondary" href="https://github.com/wcwce00-glitch/PaperAudit" target="_blank" rel="noopener noreferrer">Star on GitHub <span aria-hidden="true">↗</span></a>
+          <a class="hero-action hero-action-link" href="https://github.com/wcwce00-glitch/PaperAudit/issues/new" target="_blank" rel="noopener noreferrer">反馈问题 / 帮助改进</a>
+        </div>
       </div>
       <div class="hero-art" aria-hidden="true"><div class="fake-document"><div class="doc-top"><span>MANUSCRIPT / 01</span><span>● ● ●</span></div><div class="doc-title">Research manuscript</div><div class="ink w75"></div><div class="ink w95"></div><div class="ink w85"></div><div class="preview-chart"><svg viewBox="0 0 240 90" preserveAspectRatio="none"><path d="M0 68 L32 62 L53 45 L75 58 L98 31 L119 38 L139 15 L161 47 L182 29 L206 39 L240 12" fill="none" stroke="#486c8c" stroke-width="2.5"/><path d="M0 72 L32 67 L53 58 L75 52 L98 44 L119 46 L139 40 L161 50 L182 44 L206 43 L240 39" fill="none" stroke="#bd8c77" stroke-width="2" stroke-dasharray="4 4"/></svg></div><div class="ink w65"></div><div class="ink w80"></div></div><div class="float-note float-green">✓ 结构检查完成</div><div class="float-note float-orange">! 图 3 引用未匹配</div></div>
     </section>
@@ -61,9 +87,11 @@
       </div>
       <section class="panel template-panel" id="template-check" aria-labelledby="template-heading">
         <div class="panel-title"><span class="step">+</span><h3 id="template-heading">可选：上传目标期刊模板或作者指南</h3><span class="template-feature-tag">模板对照</span></div>
-        <p class="template-desc">已有期刊模板？选择 <b>DOCX / DOTX</b>，自动对照纸张、页边距、默认字号与可识别的结构。也可以粘贴官方指南到 TXT / MD 后上传，软件将摘录明显的写作要求，提示逐项人工核对。</p>
+        <p class="template-desc">没有模板可选择下方的<strong>学科通用预检规则包</strong>；如有期刊官方模板或作者指南，以上传文件优先。通用规则不是任何期刊的正式投稿规范，不代表投稿一定被接受。</p>
+        <div class="profile-selector"><label for="profile-select"><strong>内置规则包（未上传模板时生效）</strong></label><select id="profile-select" aria-label="选择学科规则包"></select><span class="muted" id="profile-hint">默认使用英文科研论文通用预检</span></div>
         <div class="template-choose-row"><button type="button" class="secondary-btn" id="choose-template">选择模板 / 指南文件</button><span id="template-info" class="muted">未选择模板：仍可使用下方的官方投稿资源目录</span><button type="button" class="inline-button" id="remove-template" hidden>移除模板</button></div>
         <input type="file" id="template-input" accept=".docx,.dotx,.txt,.md" hidden />
+        <div class="ai-tools"><label class="rule-row"><span><b>免费浏览器本地 AI · 实验选项</b><small>WebLLM + Qwen2.5 0.5B。需要 WebGPU，首次下载约数百 MB；只辅助补充候选条款，不自动判定违规。</small></span><input type="checkbox" id="ai-consent" /></label><button type="button" class="secondary-btn" id="run-local-ai">从已上传模板提议补充条款（可选）</button><div class="muted" id="ai-status" role="status">默认关闭。不需要付费 API；启用后从第三方站点下载运行组件和模型文件，论文和模板本身仍在本地解析。</div></div>
         <div class="template-boundary">注意：用户上传的模板不等于已核实的期刊规范；上传用于检查不会自动公开，也不会自动保存到模板库。只有主动点击“保存到我的模板库”才会保存在此浏览器。</div>
       </section>
       <section class="panel community-panel" id="community-library" aria-labelledby="community-heading">
@@ -90,6 +118,7 @@
         <div class="stat-grid"><div><strong id="count-total">0</strong><span>检查发现</span></div><div><strong id="count-warning">0</strong><span>需要关注</span></div><div><strong id="count-unverified">0</strong><span>无法自动验证</span></div><div><strong id="count-images">0</strong><span>已解析图片</span></div></div>
         <div class="report-filter" role="group" aria-label="筛选报告"><button type="button" class="filter active" data-filter="all">全部</button><button type="button" class="filter" data-filter="warning">需关注</button><button type="button" class="filter" data-filter="unverified">待人工确认</button></div>
         <div id="findings" class="findings"></div>
+        <section class="requirements-panel" id="requirements-panel" hidden><h3>投稿规范逐项核查</h3><div id="requirements-summary" class="muted"></div><div id="requirements-list" class="requirements-list"></div></section>
         <div id="coverage" class="coverage"></div>
       </section>
     </div></section>
@@ -101,9 +130,21 @@
     </section>
     <section class="details wrap" id="features"><div class="section-kicker">WHY PAPERAUDIT</div><h2>把容易遗漏的问题，<br>在投稿前找出来。</h2><div class="feature-grid"><article><div class="feature-icon">01</div><h3>正文一致性</h3><p>交叉检查文中“如图 4 所示”与实际图题是否对应，定位到段落序号和文本片段。</p></article><article><div class="feature-icon">02</div><h3>图片技术质量</h3><p>读取 DOCX 内嵌 PNG/JPEG 像素尺寸与显示尺寸，计算有效 PPI，不凭文件 DPI 元数据猜测。</p></article><article><div class="feature-icon">03</div><h3>可带走的报告</h3><p>下载自包含 HTML 与 JSON，方便逐项处理、备份和提交 Issue 时复现问题。</p></article></div></section>
     <section class="how wrap" id="how"><div><div class="section-kicker">HOW IT WORKS</div><h2>不需要学习新软件。</h2></div><div class="how-items"><div><b>1</b><span>选择你的 <code>.docx</code> 论文或图片</span></div><div><b>2</b><span>选择最低 PPI 和检查项目</span></div><div><b>3</b><span>查看问题并下载离线 HTML 报告</span></div></div></section>
-    <section class="privacy wrap" id="privacy"><div class="privacy-icon">◎</div><div><h2>你的论文，只留在你的设备里。</h2><p>本版使用纯静态网页，文件由浏览器本地解析。没有自动上传接口、账号系统或远程 AI 调用。只有用户明确点击“保存到我的模板库”时，模板才存放于当前浏览器的本地数据库；仅用户主动生成投稿信息或前往 GitHub 才开始社区贡献流程，且默认只分享来源链接。浏览器清理网站数据可能删除本地模板。</p></div></section>
+
+    <section class="faq wrap" id="faq" aria-labelledby="faq-heading">
+      <div class="section-kicker">COMMON QUESTIONS</div>
+      <h2 id="faq-heading">常见问题</h2>
+      <div class="faq-grid">
+        <details class="faq-item"><summary>我的论文会上传到服务器吗？</summary><p>普通检查在当前浏览器中处理文件，PaperAudit 没有论文上传服务。可选 AI 功能默认关闭；启用后会从第三方站点下载运行组件和模型文件。不要在公开 Issue 或 PR 中粘贴未发表论文、私人模板或审计报告。</p></details>
+        <details class="faq-item"><summary>支持哪些文件？</summary><p>论文支持 Word DOCX；图片检查支持 PNG/JPEG。模板对照可使用支持的 DOCX/DOTX，作者指南可先整理为 TXT/MD。旧版 DOC、PDF 和 LaTeX 源文件不能作为此工具的完整格式检查输入。</p></details>
+        <details class="faq-item"><summary>显示“通过”就代表符合期刊要求吗？</summary><p>不是。它只表示当前启用的规则没有发现其能够识别的问题。复杂 Word 自动域、特殊编号、所有引用格式和版面视觉要求都不能保证完整检查。投稿前仍须核对期刊最新官方作者指南。</p></details>
+        <details class="faq-item"><summary>没有模板也能使用吗？</summary><p>可以。先用示例论文体验普通检查，也可以使用内置通用预检规则。通用规则不代表特定期刊的官方要求；v0.5.0 的可追溯模板语义升级目前仍在公开 PR 中审查。</p></details>
+        <details class="faq-item"><summary>怎样帮助改进项目？</summary><p>请提交可复现的错误步骤、浏览器和操作系统信息，或使用虚构的合成 DOCX 重现编号问题。请不要上传私人论文、未公开的作者指南、个人数据或完整审计报告。<a href="https://github.com/wcwce00-glitch/PaperAudit/issues/new" target="_blank" rel="noopener noreferrer">前往 GitHub 反馈问题 ↗</a></p></details>
+      </div>
+    </section>
+    <section class="privacy wrap" id="privacy"><div class="privacy-icon">◎</div><div><h2>你的论文，只留在你的设备里。</h2><p>本版使用纯静态网页，文件由浏览器本地解析。没有自动上传论文的接口或账号系统。可选的免费浏览器 AI 需要用户明确同意，并从外部站点下载运行组件和模型权重；AI 推理设计为本机执行，但仍需通过真实 WebGPU 测试。只有用户明确点击“保存到我的模板库”时，模板才存放于当前浏览器的本地数据库；仅用户主动生成投稿信息或前往 GitHub 才开始社区贡献流程，且默认只分享来源链接。浏览器清理网站数据可能删除本地模板。</p></div></section>
   </main>
-  <footer class="footer"><div class="wrap footer-row"><span><strong>PaperAudit</strong> · Open source research tooling</span><span>Beta v0.4.1 · Built for researchers</span></div></footer>
+  <footer class="footer"><div class="wrap footer-row"><span><strong>PaperAudit</strong> · Open source research tooling</span><span>v0.5.0-preview · Unreleased candidate</span></div></footer>
   <script src="vendor/jszip.min.js"></script>
   <script type="module" src="js/app.js"></script>
 </body></html>

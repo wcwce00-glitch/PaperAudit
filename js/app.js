@@ -1,11 +1,17 @@
 import { inspectFiles, supported } from './audit.js';
+import {createRulesAudit} from './rules-engine.js';
+import {PROFILES} from './standards.js';
+import {suggestRequirementsWithLocalAI} from './ai-local.js';
 import { makeHTML, exportFile } from './report.js';
 import { inspectTemplateAgainstManuscripts, supportedTemplate } from './template.js';
 import { selectResources, setApprovedResources } from './catalog.js';
 import { saveLocalTemplate, listLocalTemplates, getLocalTemplate, removeLocalTemplate } from './library.js';
 import { SUBMISSION_REPOSITORY, validateContribution, makeIssueUrl, loadApprovedCatalog } from './community.js';
 const el=id=>document.getElementById(id);
-let files=[],lastResult=null,templateFile=null;
+let files=[],lastResult=null,templateFile=null,aiSuggestions=[];
+const profileSelect=el('profile-select');
+for(const profile of PROFILES){const o=document.createElement('option');o.value=profile.id;o.textContent=profile.name;profileSelect.append(o);}
+profileSelect.value='general-en';
 const MAX_FILES=10,MAX_TOTAL=80*1024*1024,MAX_SINGLE=30*1024*1024;
 function fileFingerprint(f){return `${f.name}/${f.size}/${f.lastModified||0}`;}
 function checkSelection(candidate, others=files){
@@ -60,7 +66,28 @@ function render(result){
   el('coverage').textContent=`已扫描 ${result.coverage.filesScanned} 个文件 · 识别 ${result.coverage.paragraphs} 个段落 · 图题 ${result.coverage.figCaptions} · 表题 ${result.coverage.tableCaptions} · 可解析图片 ${result.coverage.imagesChecked}。${result.template?`模板：${result.template.name}（未核验权威性）；候选文字要求 ${result.coverage.templateInstructions||0} 条。`:'尚未上传期刊模板；本次是通用检查。'}检测为启发式规则，不能替代人工审阅。`;
   document.querySelectorAll('.filter').forEach(b=>{b.classList.toggle('active',b.dataset.filter==='all');});
   renderFindings(result,'all');
+  renderRequirements(result.rulesAudit);
   el('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function renderRequirements(audit){
+  const area=el('requirements-panel'),target=el('requirements-list');
+  if(!area||!target)return;
+  target.replaceChildren();area.hidden=!audit;
+  if(!audit)return;
+  el('requirements-summary').textContent='审核依据：'+audit.name+'。来源说明：'+audit.source+'。共 '+audit.stats.total+' 条：已核查符合 '+audit.stats.pass+'，确认不符 '+audit.stats.fail+'，待核验 '+audit.stats.review+'。无法可靠判断的项目不会被报告为违规。';
+  for(const rule of audit.requirements){
+    const item=document.createElement('article');item.className='requirement-item';
+    const head=document.createElement('div');head.className='rq-head';
+    const title=document.createElement('h4');title.textContent=rule.id+' · '+rule.title;
+    const tag=document.createElement('span');tag.className='rq-pill '+rule.status;tag.textContent=rule.status==='pass'?'已核查 · 符合':rule.status==='fail'?'有证据支持不符':'待核验';
+    head.append(title,tag);
+    const original=document.createElement('p');original.textContent='规则原文：'+(rule.originalText||rule.text||'');
+    const source=document.createElement('div');source.className='rq-source';source.textContent='来源：'+(rule.sourceFile||rule.source||'未注明')+(rule.sourceParagraph?' · 第 '+rule.sourceParagraph+' 段':'');
+    const actual=document.createElement('p');actual.className='rq-result';actual.textContent='实际检测值：'+(rule.actualValue||rule.detail||'未执行可靠的自动检测');
+    const evidence=document.createElement('p');evidence.className='rq-source';evidence.textContent='判断依据：'+(rule.evidence||'当前检测器没有足够证据确认合规或违规。');
+    const advice=document.createElement('p');advice.className='rq-advice';advice.textContent='修改建议：'+(rule.recommendation||rule.action||'人工核对原文及适用条件；待核验不等于违规。');
+    item.append(head,original,source,actual,evidence,advice);target.append(item);
+  }
 }
 function renderFindings(result,filter){
   const container=el('findings');container.replaceChildren();
@@ -88,7 +115,7 @@ templateInput.addEventListener('change',()=>{
   if(!supportedTemplate(f)){el('template-info').textContent='格式不支持：请使用 DOCX、TXT 或 MD';return;}
   if(f.size===0 || f.size>MAX_SINGLE){el('template-info').textContent='模板必须非空且不超过 30 MB';return;}
   if(files.reduce((n,x)=>n+x.size,0)+f.size>MAX_TOTAL){el('template-info').textContent='论文/图片与模板总计不能超过 80 MB';return;}
-  templateFile=f;el('template-info').textContent=`已选择：${f.name}（仅在浏览器本地分析）`;
+  templateFile=f;aiSuggestions=[];el('template-info').textContent=`已选择：${f.name}（仅在浏览器本地分析）`;
   el('remove-template').hidden=false;el('save-local-template').disabled=false;
 });
 el('remove-template').addEventListener('click',()=>{templateFile=null;el('template-info').textContent='未选择模板：仍可使用下方的官方投稿资源目录';el('remove-template').hidden=true;el('save-local-template').disabled=true;});
@@ -174,15 +201,49 @@ el('open-submission').addEventListener('click',()=>{
   }catch(err){el('submission-status').textContent='投稿准备失败：'+err.message;}
 });
 renderLocalLibrary();
+el('run-local-ai').addEventListener('click',async()=>{
+  const state=el('ai-status'),button=el('run-local-ai');
+  if(!templateFile){state.textContent='请先上传期刊模板或指南；通用预检不需要 AI。';return;}
+  if(!el('ai-consent').checked){state.textContent='请先勾选同意加载浏览器本地模型（需要从外部下载运行组件与模型权重）。';return;}
+  button.disabled=true;
+  try{
+    let text='';
+    if(/\.(?:txt|md)$/i.test(templateFile.name))text=await templateFile.text();
+    else{
+      const {parseDocxModel}=await import('./docx-model.js');
+      const model=await parseDocxModel(templateFile);
+      text=model.paragraphs.map(p=>p.text).filter(Boolean).join('\n');
+    }
+    aiSuggestions=await suggestRequirementsWithLocalAI(text.slice(0,30000),msg=>state.textContent=msg);
+    state.textContent='本地 AI 提议 '+aiSuggestions.length+' 条候选要求。请重新运行检查；所有 AI 条目仍标记为待核验。';
+  }catch(err){state.textContent='AI 暂不可用：'+String(err.message||err)+'。基础检查不受影响。';}
+  finally{button.disabled=false;}
+});
 el('run-audit').addEventListener('click',async()=>{
   if(!files.length)return;
   const ppi=Number(el('ppi').value);
   if(!Number.isFinite(ppi)||ppi<50||ppi>1200){el('status').textContent='请输入 50–1200 之间的 PPI 阈值';return;}
   const button=el('run-audit');button.disabled=true;button.textContent='正在检查，请稍候……';el('status').textContent='文件仅在浏览器本地处理';
   try {await new Promise(r=>setTimeout(r,30));lastResult=await inspectFiles(files,{captions:el('check-captions').checked,citations:el('check-citations').checked,images:el('check-images').checked,ppi});
-    if(templateFile){
-      try {await inspectTemplateAgainstManuscripts(templateFile,files.filter(f=>/\.docx$/i.test(f.name)),lastResult);}
-      catch(err){lastResult.template={name:templateFile.name,error:String(err.message||err)};lastResult.findings.push({level:'unverified',code:'TEMPLATE-ERROR',title:'模板分析未完成',location:templateFile.name,detail:String(err.message||err),advice:'确认模板格式后重试；论文的基础检查结果仍有效。'});}
+    const docxFile=files.find(f=>/\.docx$/i.test(f.name));
+    const docxInspectionFailed=docxFile&&lastResult.findings.some(x=>x.code==='FILE-ERROR'&&x.location===docxFile.name);
+    if(docxFile&&!docxInspectionFailed){
+      // The semantic parser supplies authoritative *counts* from styles/numbering.xml.
+      // Suppress only legacy textual heuristics that conflict with that parsed model.
+      const legacyCodes=new Set(['HEADING-GAP','CAP-DUPLICATE','CAP-GAP','REF-NOT-FOUND','CITE-SECTION-MISSING','CITE-NOT-FOUND','CITE-DUPLICATE','FIELDS-UNVERIFIED']);
+      lastResult.findings=lastResult.findings.filter(x=>!legacyCodes.has(x.code));
+      try{
+        const audit=await createRulesAudit(docxFile,{templateFile,profileId:profileSelect.value,aiSuggestions});
+        lastResult.rulesAudit={name:audit.name,source:audit.source,requirements:audit.requirements,stats:audit.stats};
+        lastResult.coverage.templateInstructions=audit.stats.total;
+        lastResult.template={name:audit.name,kind:templateFile?'用户上传模板 / 指南':'内置通用规则包',verifiedOfficial:false,candidateInstructions:audit.requirements.map(x=>({location:x.source,text:x.originalText||x.text})),statement:audit.source};
+        // Only the conservative rules engine may issue a confirmed mismatch.
+        for(const rule of audit.requirements.filter(x=>x.status==='fail')){
+          lastResult.findings.push({level:'warning',code:'RULE-'+rule.id,title:'有证据支持不符：'+rule.title,location:rule.sourceFile||rule.source,detail:rule.actualValue||rule.detail,evidence:rule.evidence,advice:rule.recommendation||rule.action||'按原始要求人工核对并修改。'});
+        }
+      }catch(err){
+        lastResult.findings.push({level:'unverified',code:'RULES-ERROR',title:'逐项规则分析待核验',location:templateFile?templateFile.name:'内置预检',detail:String(err.message||err),advice:'基础检查结果仍有效；分析失败不代表论文违反任何规则。'});
+      }
     }
     render(lastResult);el('status').textContent=`检查完成：${lastResult.findings.length} 个需关注或待确认事项`;}catch(err){el('status').textContent=`检查失败：${err.message}`;}
   finally{button.disabled=false;button.innerHTML='再次检查 <span>↗</span>';}

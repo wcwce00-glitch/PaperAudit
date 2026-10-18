@@ -55,10 +55,18 @@ def page(chromium):
     p.set_content(browser_html())
     p.add_script_tag(content=MOCK_STORAGE_JS)
     p.add_script_tag(path=str(ROOT/'vendor/jszip.min.js'))
-    for name in ['audit.js','report.js','template.js','catalog.js','library.js','community.js','app.js']:
+    for name in ['docx-model.js','standards.js','audit.js','report.js','template.js','catalog.js','library.js','community.js','rules-engine.js','ai-local.js','app.js']:
         code=(ROOT/'js'/name).read_text(encoding='utf8')
         code=re.sub(r'^import .*?;\s*$', '', code, flags=re.M)
         code=code.replace('export async function ','async function ').replace('export function ','function ').replace('export const ','const ')
+        if name=='docx-model.js':
+            code='(function(){\n'+code+'\nwindow.parseDocxModel=parseDocxModel;window.checkModelStructure=checkModelStructure;\n})()'
+        if name=='standards.js':
+            code='(function(){\n'+code+'\nwindow.PROFILES=PROFILES;window.getProfile=getProfile;\n})()'
+        if name=='rules-engine.js':
+            code='(function(){\nconst parseDocxModel=window.parseDocxModel;const getProfile=window.getProfile;\n'+code+'\nwindow.createRulesAudit=createRulesAudit;\n})()'
+        if name=='ai-local.js':
+            code='(function(){\n'+code+'\nwindow.suggestRequirementsWithLocalAI=suggestRequirementsWithLocalAI;\n})()'
         if name=='template.js':
             code='(function(){\n'+code+'\nwindow.inspectTemplateAgainstManuscripts=inspectTemplateAgainstManuscripts;window.supportedTemplate=supportedTemplate;})()'
         if name=='catalog.js':

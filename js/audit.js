@@ -1,3 +1,4 @@
+import { parseDocxModel, checkModelStructure } from './docx-model.js';
 /** PaperAudit Web checks. No network requests; data never leaves this JS runtime. */
 const NS = {
   w:'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
@@ -178,22 +179,30 @@ async function inspectInlineImages(zip,doc,result,opts){
 async function inspectDocx(file,result,opts){
   if(file.size>DOCX_MAX)throw Error('DOCX 超过 30 MB 安全限制');
   let zip;
-  // Avoid decompressing all members before applying the expansion limit.
-  try {zip=await window.JSZip.loadAsync(await file.arrayBuffer(),{checkCRC32:false});}
-  catch(err){throw Error(`无法读取 DOCX 压缩结构：${err.message}`);}
-  if(!zip.file('word/document.xml'))throw Error('该文件不是有效 DOCX：缺少 word/document.xml');
+  try{zip=await window.JSZip.loadAsync(await file.arrayBuffer(),{checkCRC32:false});}
+  catch(err){throw Error('无法读取 DOCX 压缩结构：'+err.message);}
+  const data=zip.file('word/document.xml');
+  if(!data)throw Error('该文件不是有效 DOCX：缺少 word/document.xml');
   let expanded=0;
   for(const entry of Object.values(zip.files)){
     if(entry.dir)continue;
-    const size=entry?._data?.uncompressedSize||0;
-    expanded+=size;
+    expanded+=entry._data&&entry._data.uncompressedSize||0;
     if(expanded>ZIP_MAX_EXPANDED)throw Error('DOCX 解压后总体积过大，已中止检查');
   }
-  const data=zip.file('word/document.xml');
-  if(data?._data?.uncompressedSize>XML_MAX)throw Error('DOCX 正文 XML 超出安全限制');
+  if(data._data&&data._data.uncompressedSize>XML_MAX)throw Error('DOCX 正文 XML 超出安全限制');
   const doc=xmlParse(await data.async('string'),'Word 正文');
-  parseDocText(doc,result,opts);
-  await inspectInlineImages(zip,doc,result,opts);
+  const model=await parseDocxModel(file);
+  checkModelStructure(model,result,opts);
+  // Strict OOXML relationship/drawing namespace mapping is not yet used by the
+  // legacy raster-image reader; avoid false "unresolved image" warnings there.
+  if(model.namespace==='http://schemas.openxmlformats.org/wordprocessingml/2006/main'){
+    await inspectInlineImages(zip,doc,result,opts);
+  } else if(opts.images){
+    result.coverage.imageStatus='Strict OOXML 图片关系暂未逐项核验';
+    problem(result,'unverified','STRICT-IMAGE-UNVERIFIED','Strict OOXML 图片暂待核验',file.name,
+      'Strict OOXML 的图片关系与绘图命名空间尚未接入有效 PPI 计算，未判定图片违规。',
+      '如需检查图片有效分辨率，请在 Word 中另存为 Transitional DOCX 后重试，或人工核对图片格式。');
+  }
   result.coverage.filesScanned++;
 }
 async function inspectImage(file,result,opts){
@@ -206,7 +215,7 @@ async function inspectImage(file,result,opts){
   }catch(err){throw Error(`图片无法解码：${err?.message||err}`);}
 }
 export async function inspectFiles(files, opts){
-  const result={version:'0.4.1',tool:'PaperAudit Web',createdAt:new Date().toISOString(),files:files.map(f=>({name:f.name,size:f.size})),rules:{captions:!!opts.captions,citations:!!opts.citations,images:!!opts.images,minPpi:Number(opts.ppi)},findings:[],coverage:{filesScanned:0,paragraphs:0,figCaptions:0,tableCaptions:0,citations:0,references:0,imagesDeclared:0,imagesChecked:0},limitations:['DOCX 正文的普通数字型图表编号与数字型参考文献检查是启发式检查，可能存在误报或漏报。','暂不完整支持章节编号、自动域、公式编号、浮动/链接图片、TIFF/EMF/SVG 有效分辨率。','不检查学术内容、科研正确性或期刊全部投稿规范；问题位置为段落序号，并非 Word 页码。']};
+  const result={version:'0.5.0-preview',tool:'PaperAudit Web',createdAt:new Date().toISOString(),files:files.map(f=>({name:f.name,size:f.size})),rules:{captions:!!opts.captions,citations:!!opts.citations,images:!!opts.images,minPpi:Number(opts.ppi)},findings:[],coverage:{filesScanned:0,paragraphs:0,figCaptions:0,tableCaptions:0,citations:0,references:0,imagesDeclared:0,imagesChecked:0},limitations:['优先读取 Word 自动编号定义与段落样式；复杂字段、章节编号和自动域仍可能需要人工核验。','暂不完整支持章节编号、自动域、公式编号、浮动/链接图片、TIFF/EMF/SVG 有效分辨率。','不检查学术内容、科研正确性或期刊全部投稿规范；问题位置为段落序号，并非 Word 页码。']};
   for(const file of files){
     try{
       if(isDocx(file))await inspectDocx(file,result,opts);

@@ -1,91 +1,76 @@
-# PaperAudit Web v0.4.1
+# PaperAudit — Privacy-first DOCX preflight for research papers
 
-> Free, open-source, browser-local manuscript checks; not a journal compliance certification.
+[![CI](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/ci.yml)
+[![GitHub Pages](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/pages.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Live website: https://wcwce00-glitch.github.io/PaperAudit/**
+**[Try the live demo](https://wcwce00-glitch.github.io/PaperAudit/)** · [FAQ](https://wcwce00-glitch.github.io/PaperAudit/#faq) · [简体中文](README_zh.md) · [Report a bug](https://github.com/wcwce00-glitch/PaperAudit/issues/new) · [Visibility & sharing guide](docs/visibility-and-sharing.md)
 
-# PaperAudit Web (Beta 0.4.1)
+PaperAudit is a free, open-source, browser-based preflight assistant for Word research manuscripts. It helps catch common figure/table caption and cross-reference issues, basic bracket-numbered citations, supported embedded PNG/JPEG effective PPI, and selected template requirements. It exports standalone HTML or JSON reports.
 
-[简体中文说明](README_zh.md)
+> **Release status:** The public website remains on the approved `main` build. The v0.5.0 Strict OOXML and source-traceable rules upgrade is under review in [PR #3](https://github.com/wcwce00-glitch/PaperAudit/pull/3) and is not released until that PR is reviewed and merged.
 
-**A local-first, no-login, browser-based manuscript pre-submission checker.**
+## Why use it?
 
-PaperAudit Web checks ordinary figure/table numbering, literal in-text cross-references, bracket-numbered citations, and embedded PNG/JPEG effective PPI in a DOCX file. It also inspects PNG/JPEG dimensions. All user files are processed locally in the browser and are not sent to a server.
+- **Browser-local by default.** Normal document analysis runs in the browser; PaperAudit has no manuscript upload service, account system, or telemetry.
+- **Template checks with provenance (v0.5.0 preview).** The preview is designed to show the source text, source location, observed value, judgement, and recommendation for each requirement.
+- **Conservative handling of uncertainty.** When a check cannot be reliably verified, it should be marked for review rather than presented as a confirmed violation.
+- **Portable reports.** Export HTML for offline reading or JSON for further processing.
+- **Useful without a template.** Built-in generic preflight profiles offer baseline checks; they are not official rules for any specific journal.
 
-**This is an early beta and not a journal compliance certification.** Neither false positives nor false negatives can be ruled out. Word fields, advanced numbering, vector graphics, external drawings, PDFs, TIFF and formula validation are not comprehensively supported.
+## Try it
 
-## Try it now — no installation or account
+1. Open the [hosted app](https://wcwce00-glitch.github.io/PaperAudit/).
+2. Choose **Use sample manuscript** to try the synthetic example, or select a DOCX you are allowed to process.
+3. Optionally add a DOCX/DOTX template or a TXT/MD version of author instructions.
+4. Select the checks and set an image-PPI threshold appropriate to your target venue.
+5. Review the findings and download an HTML or JSON report.
 
-Open the **[live PaperAudit website](https://wcwce00-glitch.github.io/PaperAudit/)**, click **使用示例论文体验** to try the synthetic sample, or choose a `.docx` manuscript (PNG/JPEG images are also supported). Select the checks and effective-PPI threshold, press **开始检查**, and optionally download an HTML or JSON report.
+The app does not require an account or installation. For local development, run `python -m http.server 8000` from the repository root and open `http://localhost:8000/`; browsers may block ES modules when opening the page directly from `file://`.
 
-The site is published with GitHub Pages. The public URL is https://wcwce00-glitch.github.io/PaperAudit/.
+## Privacy and the optional AI experiment
 
-## Local development
+- Normal audits run locally in the browser. Documents are not uploaded to a PaperAudit server.
+- Public CI uses synthetic test documents only. Never commit unpublished manuscripts, private templates, personal data, reports, or extracted text to a public issue, pull request, repository, or CI log.
+- The optional WebLLM/Qwen candidate-extraction path is **off by default and experimental**. When explicitly enabled, the browser downloads runtime/model assets from third-party hosts. Real inference has **not yet passed** the available hosted CI software-WebGPU smoke test. AI-extracted requirements remain suggestions for human review, not confirmed rules.
 
-Because browsers normally block JavaScript modules at `file://` URLs, start a *static* server:
+## What it can and cannot tell you
+
+PaperAudit is a preflight assistant, **not** a journal-compliance certification, plagiarism detector, scientific reviewer, or guarantee of acceptance. A clean report only means enabled checks did not identify a supported issue.
+
+Known limitations include complex Word SEQ/REF fields and automatic numbering, chapter-specific caption schemes, all citation styles, vector or linked artwork, equations, PDF/LaTeX sources, visual figure placement, and every local-format override. Effective PPI can be calculated only when a supported embedded raster image and its Word display dimensions can be resolved. A 300-PPI threshold is an editable example, not a universal journal requirement. Always follow the target venue's latest official author instructions.
+
+Uploaded templates are not automatically authenticated as official or current. Natural-language requirements may be extracted as candidates but still need a human to check wording and applicability. The fictional `examples/DEMO_NOT_OFFICIAL_template.docx` is for testing only and must not be used for a real submission.
+
+## Development and tests
+
+Install Python 3 and a compatible browser test environment, then run:
 
 ```bash
 python -m http.server 8000
+python -m pytest tests -q
+python scripts/build_site.py
 ```
 
-Then open http://localhost:8000/. Python is only needed for local development; visitors to the published website do **not** need Python or any software installation.
+The browser test suite and packaging command are exercised in GitHub Actions. The optional real WebLLM test is intentionally separated from routine PR CI because hosted software-WebGPU shader initialization can time out; see the manual [WebLLM smoke workflow](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/webllm-smoke.yml). This limitation is documented rather than reported as a passing inference test.
 
-## Deployment and search indexing
+## Contribute
 
-The live site is deployed by the verified GitHub Actions workflow. Changes pushed to `main` run the tests before the Pages deployment. The site publishes a `robots.txt` and `sitemap.xml` to help search engines discover the homepage; search engines decide independently when to crawl and index it.
+Reproducible bugs, synthetic DOCX regression cases, accessibility feedback, and cross-browser test reports are welcome.
 
-`pages.yml` uses official `configure-pages`, `upload-pages-artifact`, and `deploy-pages` actions. No server/database/API key is needed. If your organization or account restricts GitHub Pages, adjust your repository settings accordingly.
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [roadmap](docs/roadmap.md).
+- Browse [good first issues](https://github.com/wcwce00-glitch/PaperAudit/labels/good%20first%20issue) or [all open issues](https://github.com/wcwce00-glitch/PaperAudit/issues).
+- For vulnerabilities, follow [SECURITY.md](SECURITY.md) if present; do not publish private research material to demonstrate a bug.
+- Software citation metadata is in [CITATION.cff](CITATION.cff).
 
-## Security and privacy
+## Community template directory
 
-- No telemetry, accounts, uploads, external JavaScript CDNs or cloud/AI requests.
-- Bundled JSZip (MIT/GPLv3 dual license) parses Word's ZIP container. See `vendor/JSZip-LICENSE.md`.
-- Hard limit of 30 MB per uploaded file, and explicit safeguards for DOCX expanded content.
-- Text is displayed with DOM `textContent` and escaped in the generated standalone HTML report to prevent injecting document HTML.
-- The example file is synthetic. Never upload unpublished or confidential research papers to a *public repository* or CI pipeline. Ordinary use of the published app keeps the user-selected document in their browser.
-- A static frontend cannot guarantee absolutely against malicious browser extensions or compromised hosting infrastructure; audit the open-source code when processing sensitive documents.
+The public directory lists curated official resource links and reviewed community submissions; it does not automatically host user-uploaded template files. The browser's personal template library is stored in that browser's local storage. Community submissions are metadata/source-link proposals and require maintainer review before appearing in the public catalog. Check source, version, applicable manuscript type, and redistribution permissions before contributing. See [data/README.md](data/README.md).
 
-## Main design limitations
+## Deployment and discovery
 
-- Paragraph numbers are based on the OOXML paragraph sequence, **not page numbers**.
-- Basic numeric captions only (not robust chapter-specific, SEQ/REF, caption templates or complex subfigures).
-- Basic `[1]`, `[1, 3]`, `[1–4]` references; can misclassify numeric bracket expressions in scientific prose.
-- Embedded raster images are checked only when a valid image and width in OOXML can be resolved. Independent images are reported as **unverified** for effective PPI without display width.
-- The UI's initial `300 PPI` is a configurable **example**, not a universal requirement.
-- A report without warnings means *nothing detected by enabled heuristics*, not journal or scientific approval.
-
-## Future enhancements
-
-Structured citation formats, configurable journal templates, reliable Word field handling, inline Word add-in and optional browser extension. Contributions and reproducible bug reports welcome.
+GitHub Pages deploys only from a verified push to `main`, after CI passes. The repository includes `robots.txt` and `sitemap.xml` to help crawlers discover the site, but indexing and search ranking are controlled by search engines and are not immediate or guaranteed.
 
 ## License
 
-Project source: MIT (`LICENSE`). Bundled JSZip: see `vendor/JSZip-LICENSE.md`.
-
-## Optional journal-template comparison (v0.3)
-
-Provide a DOCX / DOTX template (or text-based author guidelines in TXT / MD) alongside your manuscript. PaperAudit can compare explicitly recorded page dimensions/margins and Normal font settings, review common named sections and extract candidate instructions. A small number of explicit, mechanically checkable word/character limits may also be checked. **This does not verify all journal requirements or establish that the uploaded template is official.** The offline HTML report preserves text excerpts with paragraph provenance and marks unverified rules.
-
-Without a template, filter the manually curated directory of official author-resource links by discipline and language (Chinese/English). These are entry pages, **not guaranteed direct template downloads or journal rankings**. Always follow the latest target-journal Author Guidelines.
-
-Try with `examples/sample_manuscript.docx` and `examples/DEMO_NOT_OFFICIAL_template.docx` (fictional demo, not a real journal template). The site works entirely in the browser, with no manuscript upload endpoint. Development tests: `python -m pytest tests -q` with Playwright Chromium installed.
-
----
-
-## v0.4.0: Personal template collection + reviewed contributions
-
-Users can explicitly save a selected DOCX/DOTX/TXT/MD template to the **personal browser library** (IndexedDB, SHA-256 keyed, local only), then reuse or delete it. The default upload-for-analysis path **does not** save or publish files. Local browser storage may be cleared, and the same library is not shared across devices.
-
-The **community directory** is curated, not an automatic file-upload service. Users can voluntarily export a JSON submission with journal metadata, source URL, version, language and licensing information. The current Issue Form target is `wcwce00-glitch/PaperAudit` in `js/community.js`. The repository must exist with Issues enabled before the public button works. GitHub Issue Forms are **not** automatically filled from the local metadata: users copy relevant details into the form; the JSON export is a local reference copy.
-
-Only approved, source-reviewed entries from `data/approved-catalog.json` appear in the public directory after maintainer review and a merged PR. The default contribution contains **metadata and an official link only, not any document bytes**. Check source, manuscript type, submission phase, date and redistribution rights; avoid mirroring proprietary publisher files. GitHub Pages has no writable backend and cannot directly accept/review public template binaries. See `data/README.md` for the approved catalog schema, and run `node scripts/validate_catalog.mjs` to check catalog structure.
-
-Browser tests include 16 legacy paper-audit checks and 5 additional library/submission UI checks. The additional five use a mocked IndexedDB/WebCrypto adapter because the test environment blocks all HTTP and file-navigation, including localhost; real HTTPS-origin persistence and GitHub Issues flows still require acceptance tests after deployment.
-
-
-## Deployment verification (v0.4.1)
-
-- `python -m pytest tests -q` runs legacy harness tests **and** a real HTTP ES Module smoke test. The live test must pass in GitHub Actions before Pages deployment.
-- `python scripts/build_site.py` stages a safe static artifact under `dist/site`. Only this directory is published.
-- Public journal submissions go through GitHub Issue Forms; users need a GitHub account. Copy fields manually; downloaded JSON is not automatically imported into the Issue Form.
-- The browser applies a 10-file limit, 30 MB per file, and 80 MB combined for all selected papers/images plus the optional template.
+The project is licensed under the MIT License. The bundled JSZip library retains its own dual-license terms; see [vendor/JSZip-LICENSE.md](vendor/JSZip-LICENSE.md).

@@ -6,3 +6,49 @@
 /* v0.4: user-controlled local library and reviewed community contributions */
 .community-panel{margin:20px 0 0;padding:26px 30px}.community-panel .panel-title{display:flex;gap:12px;align-items:center}.community-panel .template-desc{max-width:none}.community-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;margin:20px 0 15px}.community-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#385a4a;font-weight:650}.community-form label.wide{grid-column:1/-1}.community-form input,.community-form select,.community-form textarea{font:inherit;color:#224639;background:#fff;border:1px solid #d6e1d8;border-radius:6px;padding:10px 12px;width:100%}.community-form textarea{resize:vertical}.required{color:#b26347}.community-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:13px 0}.library-list{display:grid;gap:10px;margin:16px 0}.local-template-row{border:1px solid #dce7df;border-radius:8px;background:#f9fcf9;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:14px}.local-template-row .info{min-width:0}.local-template-row strong{display:block;font-size:13px;overflow-wrap:anywhere}.local-template-row small{font-size:11px;color:#74837a;line-height:1.7}.local-template-row .actions{display:flex;flex-wrap:wrap;gap:7px}.local-template-row button{border:1px solid #d8e2d9;border-radius:5px;background:white;color:#326a56;padding:6px 9px;font-size:11px}.local-template-row .remove-btn{color:#ad584b}.submission-details{border-top:1px solid #e1e8e2;padding-top:16px;margin-top:15px}.submission-details summary{font-size:14px;font-weight:700;color:#2c6b54;cursor:pointer}.privacy-consent{display:flex;align-items:flex-start;gap:10px;font-size:12px;color:#536e5e;line-height:1.65;margin:18px 0 4px}.privacy-consent input{margin-top:3px}.community-card .journal-kind{color:#a46f38}.community-card{background:#fffcf6}.community-panel .muted{line-height:1.65}.template-feature-tag{white-space:nowrap}.secondary-btn:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:650px){.community-panel{padding:19px}.community-form{grid-template-columns:1fr}.local-template-row{align-items:stretch;flex-direction:column}}
+
+/* v0.5.0 preview: rule inventory and local-WebLLM controls */
+.profile-selector{display:grid;gap:8px;padding:15px 0 18px;border-bottom:1px solid var(--line);margin-bottom:15px}
+.profile-selector label{font-size:13px;color:var(--ink)}
+.profile-selector select{width:100%;border:1px solid var(--line);border-radius:7px;background:white;color:var(--ink);padding:10px;font:inherit}
+.ai-tools{border:1px solid var(--line);border-radius:9px;background:#fbfcfb;padding:14px;margin:16px 0;display:grid;gap:9px}
+.ai-tools .rule-row{border:0;padding:0;align-items:flex-start}
+.ai-tools small{display:block;line-height:1.65;color:var(--soft);font-weight:400;margin-top:4px}
+.requirements-panel{margin-top:20px;padding:20px;background:#f8faf8;border:1px solid #dde7df;border-radius:10px}
+.requirements-panel h3{margin:0 0 8px;color:var(--ink)}
+.requirements-list{display:grid;gap:11px;margin-top:15px}
+.requirement-item{background:white;border:1px solid #e1e8e2;border-radius:9px;padding:16px 17px;overflow-wrap:anywhere}
+.rq-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.rq-head h4{margin:0;color:var(--ink);font-size:14px;line-height:1.5}
+.rq-pill{display:inline-block;border-radius:20px;background:#edf1f3;color:#60717c;padding:5px 9px;font-size:11px;white-space:nowrap}
+.rq-pill.pass{background:#e7f3e9;color:#22633a}
+.rq-pill.fail{background:#f9e6e2;color:#9b3829}
+.requirement-item p{font-size:12px;line-height:1.75;color:#52665a;white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0 0}
+.requirement-item .rq-source{font-size:11px;color:#75857a}
+.requirement-item .rq-result{border-left:3px solid #96ad9d;padding-left:10px}
+.requirement-item .rq-advice{color:#28644b}
+@media(max-width:650px){.requirements-panel{padding:12px}.requirement-item{padding:12px}}
+
+
+/* Discoverability and onboarding actions */
+.hero-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:25px}
+.hero-action{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:43px;padding:11px 15px;border-radius:7px;text-decoration:none;font-size:12px;font-weight:750;transition:background .18s ease,transform .18s ease}
+.hero-action:hover{transform:translateY(-1px)}
+.hero-action-primary{background:var(--teal);color:#fff;border:1px solid var(--teal)}
+.hero-action-primary:hover{background:#28574e}
+.hero-action-secondary{background:#fff;color:var(--teal);border:1px solid #cddbd0}
+.hero-action-secondary:hover{background:#eef5ee}
+.hero-action-link{color:var(--teal);text-decoration:underline;text-underline-offset:3px;padding-left:5px;padding-right:5px}
+.faq{padding:8px 0 88px}
+.faq h2{font-size:32px;margin:10px 0 23px;letter-spacing:-.5px}
+.faq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.faq-item{background:#fff;border:1px solid #e1e8e2;border-radius:9px;padding:0 17px}
+.faq-item summary{cursor:pointer;list-style:none;padding:17px 23px 17px 0;position:relative;font-weight:700;font-size:13px;color:#2d5145}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary:after{content:"+";position:absolute;right:1px;top:14px;font-size:20px;font-weight:400;color:#6c8c7b}
+.faq-item[open] summary:after{content:"−"}
+.faq-item p{font-size:12px;color:#68796f;line-height:1.85;margin:0;padding:0 0 17px}
+.faq-item a{color:var(--teal);font-weight:700;text-underline-offset:3px}
+.hero-action:focus-visible,.faq-item summary:focus-visible{outline:3px solid #7ab795;outline-offset:3px}
+@media(max-width:850px){.hero-actions{gap:8px;margin-top:21px}.hero-action{font-size:12px}.faq-grid{grid-template-columns:1fr}.faq{padding-bottom:60px}}
+@media(max-width:540px){.hero-actions{display:grid;grid-template-columns:1fr 1fr;align-items:stretch}.hero-action{padding:10px 8px;text-align:center}.hero-action-link{grid-column:1/-1;min-height:35px}.faq{padding:10px 0 48px}.faq h2{font-size:27px}.faq-item{padding-left:13px;padding-right:13px}}
