@@ -36,7 +36,24 @@ function checkRule(rule,manuscript,template){
  if(check==="placeholder"){const patterns=[/XXX-X-XXXX-XXXX-X/i,/©20XX IEEE/i,/\bPaper Title\*\b/i,/Sample of a Table footnote/i,/Insert paper title/i,/填入(?:论文|标题|作者)/],found=paras.filter(p=>patterns.some(re=>re.test(p.text)));return found.length?result(reliable?"fail":"review","识别到 "+found.length+" 处典型模板占位文字。",found.slice(0,5).map(p=>"段落 "+p.index+"："+p.text.slice(0,120)).join("；"),"核实版权占位信息是否必须保留；其他占位文字一般应删除。"):result("pass","未匹配到已知占位符模式。","仅覆盖已知模式；不保证识别全部占位内容","仍需人工通读模板中的示例文字。");}
  if(check==="a4"){const secs=manuscript.sections;if(!secs.length)return result("review","未识别到分节纸张尺寸。","DOCX sectPr","人工确认页面尺寸。");const missing=secs.some(s=>!Number.isFinite(s.widthTwip)||!Number.isFinite(s.heightTwip)),bad=secs.filter(s=>Number.isFinite(s.widthTwip)&&Number.isFinite(s.heightTwip)&&(Math.abs(s.widthTwip-11906)>45||Math.abs(s.heightTwip-16838)>45));if(missing)return result("review","部分分节纸张尺寸未读取。","Word sectPr","在 Word 中检查每个分节的页面设置。");return bad.length?result(reliable?"fail":"review",bad.length+" 个分节的纸张尺寸并非 A4。","检测到分节："+bad.map(s=>Math.round(s.widthTwip)+"×"+Math.round(s.heightTwip)+" twips").join("；"),"核对所有分节是否应使用 A4。"):result("pass","已核对 "+secs.length+" 个分节，纸张尺寸为 A4。",secs.map(s=>Math.round(s.widthTwip)+"×"+Math.round(s.heightTwip)+" twips").join("；"),"无需因页面尺寸单独修改。");}
  if(check==="decimalZero"){const found=paras.filter(p=>/(?<![\w/])\.\d+(?![\w/])/.test(p.text)&&!/(?:doi:|https?:\/\/)/i.test(p.text));return found.length?result("review","发现 "+found.length+" 处可能缺少前导零的小数，未作违规判定。",found.slice(0,5).map(p=>"段落 "+p.index+"："+p.text.slice(0,125)).join("；"),"检查数学表达式、参考文献和数字语境后再修改。"):result("pass","在可解析的普通文本中未发现明显省略前导零的小数。","正文纯文本；公式对象与图中标签未检查","无需因本项单独修改。");}
- if(check==="abstractLimit"){const i=paras.findIndex(p=>/^(Abstract|摘要)[—\s：:]/i.test(p.text));if(i<0)return result("review","未可靠提取摘要文字。","未找到摘要起始段落","人工确认摘要范围及计算口径。");const v=paras[i].text.replace(/^(?:Abstract|摘要)[—\s：:]*/i,""),lang=rule.params.language||"en",amount=lang==="zh"?(v.match(/\p{Script=Han}/gu)||[]).length:(v.match(/[A-Za-z]+(?:[-’'][A-Za-z]+)*/g)||[]).length;return amount>rule.params.max?result(reliable?"fail":"review","可识别摘要正文 "+amount+(lang==="zh"?"字":"词")+"，原文上限 "+rule.params.max+"。","只计入首个摘要段落；若摘要跨段需要复核","确认摘要边界与期刊字数口径后再作修改。"):result("pass","可识别摘要正文 "+amount+(lang==="zh"?"字":"词")+"，未超过 "+rule.params.max+"。","摘要段落；跨段或特殊计数规则未覆盖","无需因本项单独修改，人工确认计数口径。");}
+ if(check==="abstractLimit"){
+  const lang=rule.params.language||"en",limit=rule.params.max;
+  const head=lang==="zh"?/^(?:中文)?摘要\s*(?:[:：—–-]\s*(.*))?$/i:/^abstract\s*(?:[:：—–-]\s*(.*))?$/i;
+  let start=-1,inline="";
+  for(let i=0;i<paras.length;i++){const m=head.exec(paras[i].text.trim());if(m){start=i;inline=(m[1]||"").trim();break;}}
+  if(start<0)return result("review","未可靠提取摘要的起始位置，无法自动统计。","未找到单独的 Abstract / 摘要标题或其后带正文的标题段。","人工确认摘要范围及计数口径。");
+  const pieces=[];if(inline)pieces.push(inline);
+  for(let i=start+1;i<paras.length&&i<start+13;i++){
+   const p=paras[i],t=p.text.trim();
+   if(/^(?:关键词|关键字|key\s*words?|index\s*terms|references|bibliography|参考文献|引言|绪论|introduction|1\s*[.]?\s+introduction)\b/i.test(t))break;
+   if(/^(?:\d+(?:\.\d+)*\s+).{0,80}$/.test(t)&&/^(?:\d+(?:\.\d+)*\s+)?(?:introduction|引言|绪论|methods?|方法|materials|结果|results|讨论|discussion)\b/i.test(t))break;
+   if(/^(?:heading|标题)\s*[1-3]$/i.test(p.styleName||""))break;
+   if(t)pieces.push(t);
+  }
+  const value=pieces.join(" "),amount=lang==="zh"?(value.match(/\p{Script=Han}/gu)||[]).length:(value.match(/[\p{L}\p{N}]+(?:[-’'][\p{L}\p{N}]+)*/gu)||[]).length;
+  const unit=lang==="zh"?"个汉字":"个词";
+  return amount>limit?result(reliable?"fail":"review","摘要约 "+amount+unit+"，上传的明确要求上限为 "+limit+"。","提取范围："+pieces.length+" 段；摘要内容可能包含数学、表格或特殊分词。","确认模板的适用范围与计数规则后，调整摘要长度。"):result("pass","摘要约 "+amount+unit+"，未超过模板上限 "+limit+"。","提取范围："+pieces.length+" 段；统计口径基于可解析的正文文本。","当前字数检查未发现超限；仍需按期刊对标题、关键词和符号的计数规则人工核对。");
+ }
  if(check==="page")return manuscript.sections.length?result("pass","已读取 "+manuscript.sections.length+" 个分节页面设置。","Word sectPr；不代表期刊合规","无需因本项单独修改。"):result("review","无法提取有效分节信息。","DOCX sectPr","用 Word 检查页面设置。");
  if(check==="captions")return result("pass","语义解析识别图题 "+paras.filter(p=>p.captionKind==="figure").length+" 个、表题 "+paras.filter(p=>p.captionKind==="table").length+" 个。","Word 段落样式与自动编号","人工确认视觉位置与子图编号。");
  if(check==="references"){const b=paras.findIndex(p=>/^(参考文献|references|bibliography)\s*$/i.test(p.text)),n=b<0?0:paras.slice(b+1).filter(p=>p.text&&(p.category==="reference"||/^\[\d+\]\s*\S/.test(p.text))).length;return result("pass","识别参考文献区段内 "+n+" 条候选条目。","Word 样式及自动编号；不代表引文完全正确","人工抽查引用与条目一一对应。");}
@@ -44,7 +61,22 @@ function checkRule(rule,manuscript,template){
  if(check==="equationNumbers")return result("review","当前未完整恢复所有公式对象及自动编号。","复杂公式可能位于 OMML 或 DrawingML","在 Word 中人工核对公式是否连续编号。");
  if(check==="pagination")return result("review","未完整检查页眉页脚自动页码及手工页面编号。","尚未覆盖全部 header/footer 和 PAGE 域","人工检查是否意外加入页码。");
  if(check==="styleDetail"&&template&&template.model){const key=rule.params.styleKey,ts=template.model.styleDefinitions.find(s=>s.name.toLowerCase().replace(/[^a-z0-9]/g,"")===key),ms=manuscript.styleDefinitions.find(s=>s.name.toLowerCase().replace(/[^a-z0-9]/g,"")===key);if(!ts||!ms)return result("review","论文中没有可靠匹配样式 "+key+"；可能重命名或局部覆盖。","两份 styles.xml","人工检查对应样式。");const keys=["fontSizePt","lineTwip","beforeTwip","afterTwip"],shared=keys.filter(k=>ts.props[k]!==null&&ms.props[k]!==null);if(!shared.length)return result("review","样式没有共同可比较的显式字体/间距参数。","Word 样式继承链","在 Word 中检查局部格式覆盖。");const diffs=shared.filter(k=>Math.abs(ts.props[k]-ms.props[k])>(k==="fontSizePt"?0.2:35));return diffs.length?result("review","样式 "+ts.name+" 可能有差异："+diffs.join("、")+"。未排除局部格式覆盖。","模板与论文 styles.xml 的参数对照","人工核对差异是否属于目标模板的强制要求。"):result("pass","样式 "+ts.name+" 的 "+shared.length+" 个可比较参数在当前容差内一致。","两份 styles.xml；不代表全部文本","无需因已对比参数单独修改，仍需检查局部覆盖。");}
- if(check==="styleCompare"&&template&&template.model){const a=manuscript.sections[manuscript.sections.length-1],t=template.model.sections[template.model.sections.length-1];if(!a||!t)return result("review","至少一份文档缺少可读取的页面设置。","Word sectPr","人工检查页面与分栏设置。");const keys=["widthTwip","heightTwip","topTwip","bottomTwip","leftTwip","rightTwip","columns"],diff=keys.filter(k=>a[k]!==null&&t[k]!==null&&Math.abs(a[k]-t[k])>(k==="columns"?0:85)),fmt=s=>keys.map(k=>k+"="+s[k]).join(", ");return diff.length?result("review","末节页面参数可能不同："+diff.join("、")+"；不直接判定违规。","论文："+fmt(a)+"；模板："+fmt(t),"根据模板适用分节和最终排版人工核对。"):result("pass","当前末节的可比较页面与分栏参数在容差内一致。","论文："+fmt(a)+"；模板："+fmt(t),"无需因本项单独修改。");}
+ if(check==="styleCompare"&&template&&template.model){
+  const actual=manuscript.sections||[],expected=template.model.sections||[];
+  if(!actual.length||!expected.length)return result("review","至少一份文档缺少可读取的页面设置。","模板与论文的 Word sectPr","在 Word 中检查页面、页边距和分栏设置。");
+  const keys=[["widthTwip","纸张宽度",45],["heightTwip","纸张高度",45],["topTwip","上页边距",80],["bottomTwip","下页边距",80],["leftTwip","左页边距",80],["rightTwip","右页边距",80],["columns","分栏数",0]];
+  const count=Math.min(actual.length,expected.length),diffs=[],unknown=[];
+  const format=s=>keys.map(([k,label])=>label+"="+(Number.isFinite(s[k])?(k.endsWith("Twip")?s[k]+" twips":s[k]):"无法读取")).join("；");
+  for(let i=0;i<count;i++)for(const [key,label,tolerance] of keys){
+   const a=actual[i][key],t=expected[i][key];
+   if(!Number.isFinite(a)||!Number.isFinite(t)){unknown.push("第 "+(i+1)+" 节 "+label);continue;}
+   if(Math.abs(a-t)>tolerance)diffs.push("第 "+(i+1)+" 节 "+label+"（模板 "+t+"；论文 "+a+(key.endsWith("Twip")?" twips":"")+"）");
+  }
+  if(actual.length!==expected.length)diffs.push("分节数不同（模板 "+expected.length+"；论文 "+actual.length+"）");
+  if(diffs.length)return result("review","已检测到与上传模板的页面版式差异："+diffs.join("；"),"模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "), "确认模板适用于目标稿件及投稿阶段后，在 Word 中逐节修正页面尺寸、页边距或分栏；不同分节可能有合法用途。");
+  if(unknown.length)return result("review","已比较 "+count+" 对分节，但部分页面参数无法可靠读取。","无法读取："+unknown.join("、")+"；模板 "+expected.length+" 节，论文 "+actual.length+" 节。","在 Word 中逐节检查页面设置。");
+  return result("pass","已比较 "+count+" 对分节的纸张尺寸、页边距和分栏；未发现超出容差的差异。","模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "),"当前可解析的页面参数与模板基本一致；仍需检查最终渲染和局部页面设置。");
+ }
  if(check==="images")return result("review","图片 PPI 由基础检查器单独核对；矢量图和图中标签仍需人工验证。","DOCX 图像对象","核对图像清晰度和最终排版大小。");
  return result("review","已提取原文，但当前没有足够可靠的自动核验器。","规则原文；未执行可信自动判断","请依据原文逐条人工核对，不要直接认定违规。");
 }
