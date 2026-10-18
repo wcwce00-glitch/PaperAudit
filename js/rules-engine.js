@@ -48,12 +48,91 @@ function checkRule(rule,manuscript,template){
  if(check==="images")return result("review","图片 PPI 由基础检查器单独核对；矢量图和图中标签仍需人工验证。","DOCX 图像对象","核对图像清晰度和最终排版大小。");
  return result("review","已提取原文，但当前没有足够可靠的自动核验器。","规则原文；未执行可信自动判断","请依据原文逐条人工核对，不要直接认定违规。");
 }
+
+function normalizeStyle(value){return String(value||"").toLowerCase().replace(/[^a-z0-9\u3400-\u9fff]/g,"");}
+function roleForStyle(id,name){
+ const n=normalizeStyle(String(id||"")+" "+String(name||""));
+ if(/figurecaption|figcaption|figuretitle|图题|图注|图片说明/.test(n))return "figure-caption";
+ if(/tablecaption|tablehead|表题|表头/.test(n))return "table-caption";
+ if(/heading1|headingone|标题1|一级标题|sectiontitle1/.test(n))return "heading-1";
+ if(/heading2|headingtwo|标题2|二级标题|sectiontitle2/.test(n))return "heading-2";
+ if(/heading3|headingthree|标题3|三级标题|sectiontitle3/.test(n))return "heading-3";
+ if(/abstract|摘要/.test(n))return "abstract";
+ if(/keywords?|indexterms|关键词/.test(n))return "keywords";
+ if(/references?|bibliography|参考文献/.test(n))return "references";
+ if(/papertitle|documenttitle|论文标题|文章标题/.test(n)||/(^| )title( |$)/i.test(String(name||"")))return "title";
+ if(/normal|bodytext|maintext|正文|正文文本|paragraphtext/.test(n))return "body";
+ if(/caption|题注/.test(n))return "caption";
+ return null;
+}
+function usedStyleSamples(model){
+ const out=new Map();
+ for(const p of model.paragraphs||[]){
+  if(!p.text)continue;
+  const sid=p.styleId||"",def=(model.styleDefinitions||[]).find(s=>sid&&s.id===sid);
+  const name=p.styleName||def?.name||sid;
+  if(!sid&&!name)continue;
+  const key=sid?"id:"+normalizeStyle(sid):"name:"+normalizeStyle(name);
+  if(!out.has(key))out.set(key,{id:sid,name,props:p.properties||def?.props||{},index:p.index,text:p.text});
+ }
+ return [...out.values()];
+}
+function displayProp(key,value){
+ if(key==="fontSizePt")return Number(value).toFixed(1)+" pt";
+ if(["lineTwip","beforeTwip","afterTwip","firstLineTwip"].includes(key))return String(value)+" twips";
+ if(key==="bold"||key==="italic")return value?"是":"否";
+ return String(value);
+}
+function propDifference(key,a,b){
+ if(a===null||a===undefined||b===null||b===undefined||a===""||b==="")return false;
+ if(typeof a==="number"&&typeof b==="number"){
+  const tolerance=key==="fontSizePt"?0.25:key==="lineTwip"?20:35;
+  return Math.abs(a-b)>tolerance;
+ }
+ return String(a).trim().toLowerCase()!==String(b).trim().toLowerCase();
+}
+function compareTemplateStyles(templateModel,manuscriptModel,templateName,manuscriptName){
+ const ts=usedStyleSamples(templateModel),ms=usedStyleSamples(manuscriptModel);
+ const roleCounts=list=>{const m=new Map();for(const s of list){const r=roleForStyle(s.id,s.name);if(r)m.set(r,(m.get(r)||0)+1);}return m;};
+ const tc=roleCounts(ts),mc=roleCounts(ms),usedM=new Set(),out=[];
+ const props=[
+  ["font","字体"],["fontEast","东亚字体"],["fontSizePt","字号"],["lineTwip","行距值"],["lineRule","行距规则"],
+  ["beforeTwip","段前距"],["afterTwip","段后距"],["firstLineTwip","首行缩进"],["bold","加粗"],["italic","斜体"]
+ ];
+ for(const t of ts){
+  if(out.length>=20)break;
+  const tId=normalizeStyle(t.id),tName=normalizeStyle(t.name),role=roleForStyle(t.id,t.name);
+  let m=ms.find(x=>!usedM.has(x)&&((tId&&normalizeStyle(x.id)===tId)||(tName&&normalizeStyle(x.name)===tName)));
+  if(!m&&role&&tc.get(role)===1&&mc.get(role)===1)m=ms.find(x=>!usedM.has(x)&&roleForStyle(x.id,x.name)===role);
+  if(!m){
+   if(role&&["title","abstract","keywords","references","figure-caption","table-caption","heading-1","heading-2","heading-3"].includes(role)){
+    out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"模板样式未能在论文中匹配："+t.name,text:"机器可读基准：上传模板中的 Word 样式“"+t.name+"”（非自然语言条文）。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:"advisory",check:"templateStyleCompare",status:"review",detail:"模板使用的样式“"+t.name+"”没有与论文中的样式名称/语义角色可靠匹配。",actualValue:"模板样式："+t.name+"；论文：未找到可靠匹配项",evidence:"模板第 "+t.index+" 段使用该样式；相似样式的映射不唯一或论文未使用可识别的对应样式。",recommendation:"检查标题、摘要、关键词、参考文献或图表题是否使用了不同样式名或直接格式覆盖；不要仅凭名称缺失判断违规。",sourceIndex:t.index});
+   }
+   continue;
+  }
+  usedM.add(m);
+  const shared=props.filter(([k])=>t.props&&m.props&&t.props[k]!==null&&t.props[k]!==undefined&&m.props[k]!==null&&m.props[k]!==undefined&&t.props[k]!==""&&m.props[k]!=="");
+  const diffs=shared.filter(([k])=>propDifference(k,t.props[k],m.props[k]));
+  if(!shared.length){
+   if(role)out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"样式格式无法量化对照："+t.name,text:"机器可读基准：模板样式“"+t.name+"”；当前 OOXML 未提供双方都可比较的格式值。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:"advisory",check:"templateStyleCompare",status:"review",detail:"模板与论文中虽找到相似样式，但没有双方均可读取的显式格式属性。",actualValue:"模板样式："+t.name+"；论文样式："+m.name+"；可比较的格式属性：0",evidence:"比较来源为两个 DOCX 的 styles.xml / 段落样式解析结果；局部直接格式与最终渲染未完整覆盖。",recommendation:"在 Word 中查看这两个样式的实际字体、字号、行距与缩进。",sourceIndex:t.index});
+   continue;
+  }
+  const detail=diffs.length
+    ?"发现可量化的格式差异："+diffs.map(([k,label])=>label+"（模板 "+displayProp(k,t.props[k])+"；论文 "+displayProp(k,m.props[k])+"）").join("；")
+    :"在 "+shared.length+" 个可读取属性中未发现超出容差的差异。";
+  out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"模板样式对照："+t.name,text:"机器可读基准：模板 Word 样式“"+t.name+"”；对比论文样式“"+m.name+"”。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:"advisory",check:"templateStyleCompare",status:diffs.length?"review":"pass",detail,actualValue:diffs.length?diffs.map(([k,label])=>label+": 模板 "+displayProp(k,t.props[k])+"；论文 "+displayProp(k,m.props[k])).join("；"):"未发现超容差差异（比较 "+shared.length+" 项）",evidence:"模板第 "+t.index+" 段使用样式“"+t.name+"”；论文第 "+m.index+" 段使用样式“"+m.name+"”。比较的可读取属性："+shared.map(([,label])=>label).join("、")+"。未完整覆盖所有 run 级直接格式和最终页面渲染。",recommendation:diffs.length?"选中论文对应段落，确认它是否应采用模板样式；按目标模板修正字体、字号、行距、段前后距或缩进，并检查局部格式覆盖。":"当前可解析的匹配样式值与模板基本一致；仍需抽查局部加粗/斜体、图表实际位置和最终分页。",sourceIndex:t.index});
+ }
+ return out;
+}
+
 export async function createRulesAudit(manuscriptFile,{templateFile=null,profileId="general-en",aiSuggestions=[]}={}){
  const manuscript=await parseDocxModel(manuscriptFile);let template=null,standards=[],name="",source="";
  if(templateFile){name=templateFile.name;source=name+"（用户上传；未独立认证为官方当前版本）";if(/\.(?:docx|dotx)$/i.test(templateFile.name)){const model=await parseDocxModel(templateFile);template={isUserTemplate:true,model};standards=extractTextRequirements(model.paragraphs,source);}else{const text=await templateFile.text();if(text.length>15*1024*1024)throw Error("模板文字过大");const paras=text.split(/\r?\n/).map((text,i)=>({text,index:i+1}));template={isUserTemplate:true};standards=extractTextRequirements(paras,source);standards.push({id:"S-text-format",title:"纯文本指南无法提供 Word 排版参照",text:"TXT/MD 仅包含文字，不提供 Word 页面尺寸、页边距、字体、行距或分栏参数；这些版式项目未被自动核验。",source:source,sourceFile:templateFile.name,sourceIndex:null,strength:"advisory",check:"manual",params:{}});}}
  else{const profile=getProfile(profileId);name=profile.name;source=profile.description;standards=profile.rules.map(x=>({...x,params:{}}));}
- if(template&&template.model){const names=["papertitle","abstract","keywords","figurecaption","tablehead","references"];for(const key of names){const sty=template.model.styleDefinitions.find(s=>s.name.toLowerCase().replace(/[^a-z0-9]/g,"")===key);if(sty)standards.push({id:"S-"+key,title:"对照模板样式："+sty.name,text:"模板 Word 内置样式 "+sty.name+"：对照可解析的字体字号、行距与段间距；可能存在局部覆盖。",source:name+" · styles.xml",strength:"advisory",check:"styleDetail",params:{styleKey:key}});}standards.push({id:"S-paper",title:"对照模板页面与分栏",text:"按模板 Word 页面设置比较纸张大小、边距与分栏。",source:name+" · sectPr",strength:"advisory",check:"styleCompare",params:{}});}
+ if(template&&template.model){standards.push({id:"S-paper",title:"对照模板页面与分栏",text:"按上传模板的 Word 页面设置比较纸张大小、页边距与分栏。",source:name+" · sectPr",strength:"advisory",check:"styleCompare",params:{}});}
  const checks=standards.map(rule=>{const checked=checkRule(rule,manuscript,template);return {...rule,...checked,originalText:rule.text,sourceFile:templateFile?templateFile.name:source,sourceParagraph:rule.sourceIndex||null,actualValue:checked.actualValue||checked.detail,recommendation:checked.action||(checked.status==="pass"?"当前支持的检查未发现异常；仍需核对完整投稿指南。":"根据上述证据人工核对；未确认不符前不要直接判为违规。")};});
  const suggestions=aiSuggestions.map((s,i)=>({id:"AI-"+(i+1),title:String(s.title||"AI 候选要求").slice(0,100),text:String(s.text||"").slice(0,2000),originalText:String(s.text||"").slice(0,2000),source:source+" · 本地 AI 候选（未经正式核验）",sourceFile:templateFile?templateFile.name:"",sourceParagraph:null,sourceOffset:s.sourceOffset||0,strength:"unverified",check:"manual",params:{},status:"review",detail:"AI 仅提供待核验的原文候选条款，不自动判定论文违规。",actualValue:"未进行自动合规判断",evidence:"候选原文必须在来源文件中逐字存在",action:"人工核对原文与适用范围；不要仅凭 AI 建议修改论文。",recommendation:"人工核对原文与适用范围；不要仅凭 AI 建议修改论文。"}));
- return {name,source,profileId:templateFile?null:profileId,requirements:[...checks,...suggestions],stats:{total:checks.length+suggestions.length,pass:checks.filter(x=>x.status==="pass").length,fail:checks.filter(x=>x.status==="fail").length,review:checks.filter(x=>x.status==="review").length+suggestions.length},isUserTemplate:!!templateFile,formatVersion:"0.5.0-preview"};
+ const measuredComparisons=template&&template.model?compareTemplateStyles(template.model,manuscript,name,manuscriptFile.name):[];
+ const requirements=[...checks,...measuredComparisons,...suggestions];
+ return {name,source,profileId:templateFile?null:profileId,requirements,stats:{total:requirements.length,pass:requirements.filter(x=>x.status==="pass").length,fail:requirements.filter(x=>x.status==="fail").length,review:requirements.filter(x=>x.status==="review").length},isUserTemplate:!!templateFile,formatVersion:"0.5.1"};
 }
