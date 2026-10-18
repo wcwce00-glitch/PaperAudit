@@ -4,7 +4,7 @@
 [![GitHub Pages](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/pages.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**[立即打开在线版](https://wcwce00-glitch.github.io/PaperAudit/)** · [English README](README.md) · [报告 Bug](https://github.com/wcwce00-glitch/PaperAudit/issues/new)
+**[立即打开在线版](https://wcwce00-glitch.github.io/PaperAudit/)** · [常见问题](https://wcwce00-glitch.github.io/PaperAudit/#faq) · [English README](README.md) · [报告 Bug](https://github.com/wcwce00-glitch/PaperAudit/issues/new) · [推广与搜索引擎指南](docs/visibility-and-sharing.md)
 
 PaperAudit 是免费的开源浏览器工具，帮助科研人员在 Word 论文投稿前检查一部分常见问题：图题/表题及正文中的文字引用、基础数字型参考文献、支持的内嵌 PNG/JPEG 图片有效 PPI，以及选定的模板要求。检查结果可导出为独立 HTML 或 JSON 报告。
 
