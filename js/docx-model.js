@@ -11,7 +11,7 @@ function props(n){
  const p=child(n,"pPr"),r=child(n,"rPr"),sp=child(p,"spacing"),ind=child(p,"ind"),fonts=child(r,"rFonts"),sz=num(attr(child(r,"sz"),"val"));
  const bool=(parent,name)=>{const node=child(parent,name);if(!node)return null;const v=attr(node,"val");return !["0","false","off","none"].includes(String(v||"").toLowerCase());};
  return {
-  font:attr(fonts,"ascii")||attr(fonts,"eastAsia")||null,fontEast:attr(fonts,"eastAsia")||null,fontSizePt:sz===null?null:sz/2,
+  font:attr(fonts,"ascii")||attr(fonts,"hAnsi")||attr(fonts,"eastAsia")||null,fontHAnsi:attr(fonts,"hAnsi")||null,fontEast:attr(fonts,"eastAsia")||null,fontCs:attr(fonts,"cs")||null,fontSizePt:sz===null?null:sz/2,
   lineTwip:twip(attr(sp,"line")),lineRule:attr(sp,"lineRule"),beforeTwip:twip(attr(sp,"before")),afterTwip:twip(attr(sp,"after")),
   firstLineTwip:twip(attr(ind,"firstLine")),leftTwip:twip(attr(ind,"left")),rightTwip:twip(attr(ind,"right")),hangingTwip:twip(attr(ind,"hanging")),
   alignment:attr(child(p,"jc"),"val")||null,color:attr(child(r,"color"),"val")||null,underline:attr(child(r,"u"),"val")||null,
@@ -45,7 +45,8 @@ export async function parseDocxModel(file){
   const captionKind=cat||(figLiteral||simpleFig?"figure":simpleTable?"table":null);
   const literalCaption=captionKind?literalNo(text,captionKind):null;
   const captionSuffix=figLiteral?figLiteral[2].toLowerCase():"";
-  const runs=all(p,"r").map(props).filter(x=>x.font!==null||x.fontSizePt!==null);
+  const runKeys=["font","fontHAnsi","fontEast","fontCs","fontSizePt","color","underline","bold","italic","smallCaps","allCaps","strike"];
+  const runs=all(p,"r").map(props).filter(x=>runKeys.some(k=>x[k]!==null&&x[k]!==undefined));
   paragraphs.push({index:i+1,text,styleId:sid||"",styleName:sty?sty.name:"",category:cat,label:nlabel,number:numbered,format:fmt,numId:ni.numId||null,level:ni.level,captionKind,captionNumber:captionKind==="figure"||captionKind==="table"?(numbered===null?literalCaption:numbered):null,captionSuffix,properties:styleProps(sid,styles),runOverrides:runs,hasTabs:all(p,"tab").length>0,hasManualBreak:all(p,"br").some(x=>attr(x,"type")==="page"),hasSection:!!child(child(p,"pPr"),"sectPr")});
  }
  return {filename:file.name,namespace:doc.documentElement.namespaceURI,paragraphs,sections:sectionData(doc),tables:all(body,"tbl").length,drawings:all(body,"drawing").length,hasNumberingXml:!!nd,styleDefinitions:[...styles.map.values()].map(s=>({id:s.id,name:s.name,props:styleProps(s.id,styles)})),sourceFile:file};
