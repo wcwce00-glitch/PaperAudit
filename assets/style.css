@@ -28,3 +28,27 @@
 .requirement-item .rq-result{border-left:3px solid #96ad9d;padding-left:10px}
 .requirement-item .rq-advice{color:#28644b}
 @media(max-width:650px){.requirements-panel{padding:12px}.requirement-item{padding:12px}}
+
+
+/* Discoverability and onboarding actions */
+.hero-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:25px}
+.hero-action{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:43px;padding:11px 15px;border-radius:7px;text-decoration:none;font-size:12px;font-weight:750;transition:background .18s ease,transform .18s ease}
+.hero-action:hover{transform:translateY(-1px)}
+.hero-action-primary{background:var(--teal);color:#fff;border:1px solid var(--teal)}
+.hero-action-primary:hover{background:#28574e}
+.hero-action-secondary{background:#fff;color:var(--teal);border:1px solid #cddbd0}
+.hero-action-secondary:hover{background:#eef5ee}
+.hero-action-link{color:var(--teal);text-decoration:underline;text-underline-offset:3px;padding-left:5px;padding-right:5px}
+.faq{padding:8px 0 88px}
+.faq h2{font-size:32px;margin:10px 0 23px;letter-spacing:-.5px}
+.faq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.faq-item{background:#fff;border:1px solid #e1e8e2;border-radius:9px;padding:0 17px}
+.faq-item summary{cursor:pointer;list-style:none;padding:17px 23px 17px 0;position:relative;font-weight:700;font-size:13px;color:#2d5145}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary:after{content:"+";position:absolute;right:1px;top:14px;font-size:20px;font-weight:400;color:#6c8c7b}
+.faq-item[open] summary:after{content:"−"}
+.faq-item p{font-size:12px;color:#68796f;line-height:1.85;margin:0;padding:0 0 17px}
+.faq-item a{color:var(--teal);font-weight:700;text-underline-offset:3px}
+.hero-action:focus-visible,.faq-item summary:focus-visible{outline:3px solid #7ab795;outline-offset:3px}
+@media(max-width:850px){.hero-actions{gap:8px;margin-top:21px}.hero-action{font-size:12px}.faq-grid{grid-template-columns:1fr}.faq{padding-bottom:60px}}
+@media(max-width:540px){.hero-actions{display:grid;grid-template-columns:1fr 1fr;align-items:stretch}.hero-action{padding:10px 8px;text-align:center}.hero-action-link{grid-column:1/-1;min-height:35px}.faq{padding:10px 0 48px}.faq h2{font-size:27px}.faq-item{padding-left:13px;padding-right:13px}}
