@@ -11,12 +11,12 @@
 - Add a post-deploy smoke check for the semantic modules, WebLLM CSP configuration, robots.txt and sitemap.xml.
 - Published preview deployment: https://wcwce00-glitch.github.io/PaperAudit/ .
 
-## Follow-up under review — template-driven comparison (PR #6)
+## Template-driven comparison follow-up (PR #6)
 - Wire the existing template-to-manuscript comparison module into the main audit action.
 - Compare supported template page settings, explicit required sections and abstract limits against each selected manuscript.
 - Add measurable template-versus-manuscript paragraph style comparisons and report the observed values and source provenance.
 - Keep uncertain cases in review-only status; template text extraction alone is not treated as a completed format check.
-- New regression tests use synthetic DOCX fixtures only; these fixes are not live until PR #6 is reviewed, merged and deployed.
+- Regression tests use synthetic DOCX fixtures only; no private manuscripts, templates, or extracted text are committed or sent to CI.
 
 ## v0.4.1 — pre-release hardening
 - Aligned analysis report version with website version.
