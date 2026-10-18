@@ -8,7 +8,7 @@
 
 PaperAudit is a free, open-source, browser-based preflight assistant for Word research manuscripts. It helps catch common figure/table caption and cross-reference issues, basic bracket-numbered citations, supported embedded PNG/JPEG effective PPI, and selected template requirements. It exports standalone HTML or JSON reports.
 
-> **Release status:** The public website remains on the approved `main` build. The v0.5.0 Strict OOXML and source-traceable rules upgrade is under review in [PR #3](https://github.com/wcwce00-glitch/PaperAudit/pull/3) and is not released until that PR is reviewed and merged.
+> **Release status:** The v0.5.0 preview is live. An important limitation was identified after release: the main audit flow did not invoke the full uploaded-template comparison path, so template-driven checks were narrower than intended. The wiring, broader measured format comparison, and regression tests are being fixed in [PR #6](https://github.com/wcwce00-glitch/PaperAudit/pull/6); do not expect that follow-up on the live site until it is merged and redeployed.
 
 ## Why use it?
 
@@ -33,6 +33,8 @@ The app does not require an account or installation. For local development, run 
 - Normal audits run locally in the browser. Documents are not uploaded to a PaperAudit server.
 - Public CI uses synthetic test documents only. Never commit unpublished manuscripts, private templates, personal data, reports, or extracted text to a public issue, pull request, repository, or CI log.
 - The optional WebLLM/Qwen candidate-extraction path is **off by default and experimental**. When explicitly enabled, the browser downloads runtime/model assets from third-party hosts. Real inference has **not yet passed** the available hosted CI software-WebGPU smoke test. AI-extracted requirements remain suggestions for human review, not confirmed rules.
+
+For DOCX templates, the released build only compares a limited set of readable page/default-style fields and supported instructions. It does **not** yet guarantee a full document-to-template format audit. Requirements without a supported automatic check are review-only; a list of extracted instructions is not proof that the paper was checked against every instruction.
 
 ## What it can and cannot tell you
 
