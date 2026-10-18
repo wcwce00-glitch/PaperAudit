@@ -261,10 +261,12 @@ def test_uploaded_template_page_size_mismatch(page):
 
 
 
-def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', margin='1440', alignment='left', line='240'):
+def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', margin='1440', alignment='left', line='240', direct_bold_first=False):
     paragraphs = ''.join(
-        '<w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r><w:t>' + escape(t) + '</w:t></w:r></w:p>'
-        for t in lines
+        '<w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r>'
+        + ('<w:rPr><w:b w:val="1"/></w:rPr>' if direct_bold_first and i == 0 else '')
+        + '<w:t>' + escape(t) + '</w:t></w:r></w:p>'
+        for i, t in enumerate(lines)
     )
     doc = ('<?xml version="1.0" encoding="UTF-8"?>'
            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
@@ -294,7 +296,7 @@ def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', ma
 def test_uploaded_template_drives_style_and_abstract_comparison(page):
     template = make_styled_docx(
         ['Abstract', 'Template placeholder paragraph.', 'The abstract must not exceed 10 words.'],
-        font='Times New Roman', size='20', alignment='center', line='240'
+        font='Times New Roman', size='20', alignment='center', line='240', direct_bold_first=True
     )
     manuscript = make_styled_docx([
         'Abstract',
@@ -321,6 +323,7 @@ def test_uploaded_template_drives_style_and_abstract_comparison(page):
     assert any('10.0 pt' in x and '12.0 pt' in x for x in rows), rows
     assert any('段落对齐（模板 居中；论文 两端对齐）' in x for x in rows), rows
     assert any('1.00× 行距（auto' in x and '1.50× 行距（auto' in x for x in rows), rows
+    assert any('局部直接格式样例有差异' in x and '加粗：模板 是；论文 否' in x for x in rows), rows
     with page.expect_download() as info:page.locator('#save-json').click()
     import json
     result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
