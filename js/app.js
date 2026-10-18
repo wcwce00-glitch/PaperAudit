@@ -92,7 +92,7 @@ function renderRequirements(audit){
   for(const rule of audit.requirements){
     const item=document.createElement('article');item.className='requirement-item';
     const head=document.createElement('div');head.className='rq-head';
-    const title=document.createElement('h4');title.textContent=rule.id+' · '+rule.title;
+    const title=document.createElement('h4');title.textContent=(rule.checkedDocument?rule.checkedDocument+' · ':'')+rule.id+' · '+rule.title;
     const tag=document.createElement('span');tag.className='rq-pill '+rule.status;tag.textContent=rule.status==='pass'?'已核查 · 符合':rule.status==='fail'?'有证据支持不符':'待核验';
     head.append(title,tag);
     const original=document.createElement('p');original.textContent='规则原文：'+(rule.originalText||rule.text||'');
