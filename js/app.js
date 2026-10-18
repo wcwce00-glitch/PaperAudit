@@ -276,7 +276,7 @@ el('run-audit').addEventListener('click',async()=>{
         kind:templateFile?'用户上传模板 / 指南':'内置通用规则包',
         isUserTemplate:!!templateFile,
         verifiedOfficial:false,
-        candidateInstructions:audits[0].requirements.map(x=>({location:x.source||x.sourceFile||'模板规则',text:x.originalText||x.text||''})),
+        candidateInstructions:comparisonTemplate?.candidateInstructions||audits[0].requirements.filter(x=>x.sourceParagraph).map(x=>({location:x.source||x.sourceFile||'模板规则',text:x.originalText||x.text||''})),
         statement:audits[0].source
       };
       for(const rule of requirements.filter(x=>x.status==='fail')){
