@@ -239,6 +239,7 @@ def test_uploaded_template_page_difference_and_explicit_section(page):
     assert any('摘要' in x['originalText'] for x in result['rulesAudit']['requirements'])
     assert all(x['status'] in ('pass','fail','review') for x in result['rulesAudit']['requirements'])
     assert len(result['template']['candidateInstructions'])>=1
+    assert any(x['code']=='TEMPLATE-REQUIRED-SECTION' for x in result['findings']), result['findings']
 
 
 def test_uploaded_template_page_size_mismatch(page):
@@ -250,7 +251,99 @@ def test_uploaded_template_page_size_mismatch(page):
     rows=page.locator('.requirement-item').all_inner_texts()
     assert any('末节页面参数可能不同' in x for x in rows), rows
     assert not any('有证据支持不符：对照模板页面' in x for x in page.locator('.finding-title').all_inner_texts())
+    with page.expect_download() as info:page.locator('#save-json').click()
+    import json
+    result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
+    assert any(x['code']=='TEMPLATE-PAGE' and '不同' in x['title'] for x in result['findings']), result['findings']
+    page_reqs=[x for x in result['rulesAudit']['requirements'] if x['id']=='S-paper']
+    assert page_reqs and page_reqs[0]['status']=='review', page_reqs
+    assert '模板 14000' in page_reqs[0]['actualValue'] or '纸张宽度' in page_reqs[0]['actualValue']
 
+
+
+def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', margin='1440'):
+    paragraphs = ''.join(
+        '<w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r><w:t>' + escape(t) + '</w:t></w:r></w:p>'
+        for t in lines
+    )
+    doc = ('<?xml version="1.0" encoding="UTF-8"?>'
+           '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+           '<w:body>' + paragraphs +
+           f'<w:sectPr><w:pgSz w:w="{width}" w:h="16838"/>'
+           f'<w:pgMar w:top="{margin}" w:bottom="1440" w:left="1440" w:right="1440"/></w:sectPr></w:body></w:document>')
+    style = ('<?xml version="1.0" encoding="UTF-8"?>'
+             '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+             '<w:docDefaults><w:rPrDefault><w:rPr>'
+             f'<w:rFonts w:ascii="{escape(font)}" w:eastAsia="{escape(font)}"/>'
+             f'<w:sz w:val="{size}"/>'
+             '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:line="240" w:lineRule="auto" w:after="200"/>'
+             '</w:pPr></w:pPrDefault></w:docDefaults>'
+             '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/>'
+             '<w:rPr>'
+             f'<w:rFonts w:ascii="{escape(font)}" w:eastAsia="{escape(font)}"/>'
+             f'<w:sz w:val="{size}"/>'
+             '</w:rPr><w:pPr><w:spacing w:line="240" w:lineRule="auto" w:after="200"/></w:pPr></w:style>'
+             '</w:styles>')
+    data = io.BytesIO()
+    with zipfile.ZipFile(data, 'w') as z:
+        z.writestr('word/document.xml', doc)
+        z.writestr('word/styles.xml', style)
+    return data.getvalue()
+
+
+def test_uploaded_template_drives_style_and_abstract_comparison(page):
+    template = make_styled_docx(
+        ['Abstract', 'Template placeholder paragraph.', 'The abstract must not exceed 10 words.'],
+        font='Times New Roman', size='20'
+    )
+    manuscript = make_styled_docx([
+        'Abstract',
+        'This manuscript abstract has several more than ten words in the first paragraph.',
+        'This second abstract paragraph adds another sequence of words that pushes the count above the limit.',
+        'Keywords: template driven checking',
+        '1 Introduction',
+        'This is ordinary synthetic manuscript text.'
+    ], font='Arial', size='24')
+    page.locator('#file-input').set_input_files({
+        'name':'synthetic-manuscript.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':manuscript
+    })
+    page.locator('#template-input').set_input_files({
+        'name':'synthetic-template.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':template
+    })
+    run_check(page)
+    rows=page.locator('.requirement-item').all_inner_texts()
+    assert any('模板样式对照：Normal' in x for x in rows), rows
+    assert any('Times New Roman' in x and 'Arial' in x for x in rows), rows
+    assert any('20.0 pt' in x and '12.0 pt' in x for x in rows), rows
+    with page.expect_download() as info:page.locator('#save-json').click()
+    import json
+    result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
+    assert any(x['code']=='TEMPLATE-ABSTRACT-LIMIT' for x in result['findings']), result['findings']
+    audit_rules=result['rulesAudit']['requirements']
+    assert any(x.get('checkedDocument')=='synthetic-manuscript.docx' and x['status']=='review' and 'Normal' in x['title'] for x in audit_rules), audit_rules
+    assert any(x['status']=='fail' and 'abstract' in x['title'].lower() for x in audit_rules), audit_rules
+
+
+def test_rule_panel_identifies_each_checked_manuscript(page):
+    template=make_template_docx(note='This paper must include an abstract.')
+    for name in ['first.docx','second.docx']:
+        page.locator('#file-input').set_input_files({
+            'name':name,
+            'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'buffer':make_paragraph_docx(['Abstract','Short abstract text.','Introduction','Sample text.'])
+        })
+    page.locator('#template-input').set_input_files({
+        'name':'multi-paper-template.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':template
+    })
+    run_check(page)
+    names=' '.join(page.locator('.requirement-item h4').all_inner_texts())
+    assert 'first.docx' in names and 'second.docx' in names, names
 
 def test_template_text_instructions_are_unverified_not_fabricated_hard_rules(page):
     manuscript=make_paragraph_docx(['1 引言','本研究说明问题。'])
