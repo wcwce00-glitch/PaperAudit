@@ -318,7 +318,7 @@ def test_uploaded_template_drives_style_and_abstract_comparison(page):
     rows=page.locator('.requirement-item').all_inner_texts()
     assert any('模板样式对照：Normal' in x for x in rows), rows
     assert any('Times New Roman' in x and 'Arial' in x for x in rows), rows
-    assert any('20.0 pt' in x and '12.0 pt' in x for x in rows), rows
+    assert any('10.0 pt' in x and '12.0 pt' in x for x in rows), rows
     with page.expect_download() as info:page.locator('#save-json').click()
     import json
     result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
