@@ -4,7 +4,7 @@
 [![GitHub Pages](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/wcwce00-glitch/PaperAudit/actions/workflows/pages.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**[Try the live demo](https://wcwce00-glitch.github.io/PaperAudit/)** · [简体中文](README_zh.md) · [Report a bug](https://github.com/wcwce00-glitch/PaperAudit/issues/new)
+**[Try the live demo](https://wcwce00-glitch.github.io/PaperAudit/)** · [FAQ](https://wcwce00-glitch.github.io/PaperAudit/#faq) · [简体中文](README_zh.md) · [Report a bug](https://github.com/wcwce00-glitch/PaperAudit/issues/new) · [Visibility & sharing guide](docs/visibility-and-sharing.md)
 
 PaperAudit is a free, open-source, browser-based preflight assistant for Word research manuscripts. It helps catch common figure/table caption and cross-reference issues, basic bracket-numbered citations, supported embedded PNG/JPEG effective PPI, and selected template requirements. It exports standalone HTML or JSON reports.
 
