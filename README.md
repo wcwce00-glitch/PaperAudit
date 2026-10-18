@@ -8,7 +8,7 @@
 
 PaperAudit is a free, open-source, browser-based preflight assistant for Word research manuscripts. It helps catch common figure/table caption and cross-reference issues, basic bracket-numbered citations, supported embedded PNG/JPEG effective PPI, and selected template requirements. It exports standalone HTML or JSON reports.
 
-> **Release status:** The v0.5.0 preview is live. An important limitation was identified after release: the main audit flow did not invoke the full uploaded-template comparison path, so template-driven checks were narrower than intended. The wiring, broader measured format comparison, and regression tests are being fixed in [PR #6](https://github.com/wcwce00-glitch/PaperAudit/pull/6); do not expect that follow-up on the live site until it is merged and redeployed.
+> **Release status:** The v0.5.0 preview is live. When a target DOCX/DOTX template is uploaded, PaperAudit uses the readable template layout and paragraph styles as a comparison baseline and checks supported explicit requirements. Complex local overrides, final visual placement, and natural-language instructions without a reliable checker remain review-only; template extraction alone is not proof that every requirement passed.
 
 ## Why use it?
 
@@ -34,7 +34,7 @@ The app does not require an account or installation. For local development, run 
 - Public CI uses synthetic test documents only. Never commit unpublished manuscripts, private templates, personal data, reports, or extracted text to a public issue, pull request, repository, or CI log.
 - The optional WebLLM/Qwen candidate-extraction path is **off by default and experimental**. When explicitly enabled, the browser downloads runtime/model assets from third-party hosts. Real inference has **not yet passed** the available hosted CI software-WebGPU smoke test. AI-extracted requirements remain suggestions for human review, not confirmed rules.
 
-For DOCX templates, the released build only compares a limited set of readable page/default-style fields and supported instructions. It does **not** yet guarantee a full document-to-template format audit. Requirements without a supported automatic check are review-only; a list of extracted instructions is not proof that the paper was checked against every instruction.
+Template comparison is deliberately evidence-bounded. It compares measurable page settings and matched paragraph-style properties, plus a small set of explicit machine-checkable instructions. It does **not** guarantee pixel-perfect reproduction of a Word template or full interpretation of every natural-language clause. Direct formatting, complex sections, floating objects, table internals, fields, and final visual placement may require manual review. A list of extracted instructions is not proof that every instruction was checked.
 
 ## What it can and cannot tell you
 
