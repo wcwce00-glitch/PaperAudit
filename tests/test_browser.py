@@ -218,7 +218,7 @@ def test_no_template_uses_builtin_profile_without_claiming_journal_compliance(pa
     page.locator('#file-input').set_input_files(str(ROOT / 'examples/sample_manuscript.docx'))
     findings=run_check(page)
     assert any('有效分辨率不足' in x for x in findings)
-    assert '模板：英文科研论文 · 通用预检' in page.locator('#coverage').inner_text()
+    assert '使用通用预检规则包：英文科研论文 · 通用预检' in page.locator('#coverage').inner_text()
     assert '不等同于任何期刊的官方强制规范' in page.locator('#requirements-summary').inner_text()
     assert page.locator('.requirement-item').count() >= 6
     assert '非官方' in page.locator('#requirements-summary').inner_text() or '通用' in page.locator('#requirements-summary').inner_text()
