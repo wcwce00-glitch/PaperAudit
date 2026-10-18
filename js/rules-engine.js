@@ -109,16 +109,30 @@ function usedStyleSamples(model){
  }
  return [...out.values()];
 }
-function displayProp(key,value){
+function displayProp(key,value,props={}){
  if(key==="fontSizePt")return Number(value).toFixed(1)+" pt";
- if(["lineTwip","beforeTwip","afterTwip","firstLineTwip"].includes(key))return String(value)+" twips";
- if(key==="bold"||key==="italic")return value?"是":"否";
+ if(key==="lineTwip"){
+  const rule=props.lineRule||"auto";
+  if(rule==="auto")return (Number(value)/240).toFixed(2)+"× 行距（auto；OOXML="+value+"）";
+  if(rule==="exact")return value+" twips（"+(Number(value)/20).toFixed(1)+" pt，exact）";
+  if(rule==="atLeast")return "至少 "+value+" twips（"+(Number(value)/20).toFixed(1)+" pt）";
+  return value+" twips（"+rule+"）";
+ }
+ if(["beforeTwip","afterTwip","firstLineTwip","leftTwip","rightTwip","hangingTwip"].includes(key))return value+" twips";
+ if(["bold","italic","smallCaps","allCaps","strike","keepNext","keepLines","pageBreakBefore"].includes(key))return value?"是":"否";
+ if(key==="alignment")return ({left:"左对齐",right:"右对齐",center:"居中",both:"两端对齐",distribute:"分散对齐",start:"起始对齐",end:"末尾对齐"}[value]||String(value));
+ if(key==="outlineLevel")return "大纲级别 "+(Number(value)+1);
+ if(key==="color")return String(value).toUpperCase()==="AUTO"?"自动":("#"+String(value).replace(/^#/,"").toUpperCase());
+ if(key==="underline")return value==="none"?"无下划线":String(value);
  return String(value);
 }
-function propDifference(key,a,b){
+function propDifference(key,a,b,tProps={},mProps={}){
  if(a===null||a===undefined||b===null||b===undefined||a===""||b==="")return false;
  if(typeof a==="number"&&typeof b==="number"){
-  const tolerance=key==="fontSizePt"?0.25:key==="lineTwip"?20:35;
+  let tolerance=35;
+  if(key==="fontSizePt")tolerance=0.25;
+  else if(key==="lineTwip")tolerance=(tProps.lineRule||"auto")==="auto"&&(mProps.lineRule||"auto")==="auto"?8:20;
+  else if(key==="outlineLevel")tolerance=0;
   return Math.abs(a-b)>tolerance;
  }
  return String(a).trim().toLowerCase()!==String(b).trim().toLowerCase();
@@ -128,8 +142,11 @@ function compareTemplateStyles(templateModel,manuscriptModel,templateName,manusc
  const roleCounts=list=>{const m=new Map();for(const s of list){const r=roleForStyle(s.id,s.name);if(r)m.set(r,(m.get(r)||0)+1);}return m;};
  const tc=roleCounts(ts),mc=roleCounts(ms),usedM=new Set(),out=[];
  const props=[
-  ["font","字体"],["fontEast","东亚字体"],["fontSizePt","字号"],["lineTwip","行距值"],["lineRule","行距规则"],
-  ["beforeTwip","段前距"],["afterTwip","段后距"],["firstLineTwip","首行缩进"],["bold","加粗"],["italic","斜体"]
+  ["font","西文字体"],["fontEast","东亚字体"],["fontSizePt","字号"],["alignment","段落对齐"],
+  ["lineRule","行距规则"],["lineTwip","行距值"],["beforeTwip","段前距"],["afterTwip","段后距"],
+  ["leftTwip","左缩进"],["rightTwip","右缩进"],["firstLineTwip","首行缩进"],["hangingTwip","悬挂缩进"],
+  ["bold","加粗"],["italic","斜体"],["underline","下划线"],["smallCaps","小型大写字母"],["allCaps","全部大写"],["strike","删除线"],
+  ["keepNext","与下段同页"],["keepLines","段落不分页"],["pageBreakBefore","段前分页"],["outlineLevel","大纲级别"],["color","文字颜色"]
  ];
  for(const t of ts){
   if(out.length>=20)break;
@@ -144,15 +161,15 @@ function compareTemplateStyles(templateModel,manuscriptModel,templateName,manusc
   }
   usedM.add(m);
   const shared=props.filter(([k])=>t.props&&m.props&&t.props[k]!==null&&t.props[k]!==undefined&&m.props[k]!==null&&m.props[k]!==undefined&&t.props[k]!==""&&m.props[k]!=="");
-  const diffs=shared.filter(([k])=>propDifference(k,t.props[k],m.props[k]));
+  const diffs=shared.filter(([k])=>propDifference(k,t.props[k],m.props[k],t.props,m.props));
   if(!shared.length){
    if(role)out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"样式格式无法量化对照："+t.name,text:"机器可读基准：模板样式“"+t.name+"”；当前 OOXML 未提供双方都可比较的格式值。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:"advisory",check:"templateStyleCompare",status:"review",detail:"模板与论文中虽找到相似样式，但没有双方均可读取的显式格式属性。",actualValue:"模板样式："+t.name+"；论文样式："+m.name+"；可比较的格式属性：0",evidence:"比较来源为两个 DOCX 的 styles.xml / 段落样式解析结果；局部直接格式与最终渲染未完整覆盖。",recommendation:"在 Word 中查看这两个样式的实际字体、字号、行距与缩进。",sourceIndex:t.index});
    continue;
   }
   const detail=diffs.length
-    ?"发现可量化的格式差异："+diffs.map(([k,label])=>label+"（模板 "+displayProp(k,t.props[k])+"；论文 "+displayProp(k,m.props[k])+"）").join("；")
+    ?"发现可量化的格式差异："+diffs.map(([k,label])=>label+"（模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)+"）").join("；")
     :"在 "+shared.length+" 个可读取属性中未发现超出容差的差异。";
-  out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"模板样式对照："+t.name,text:"机器可读基准：模板 Word 样式“"+t.name+"”；对比论文样式“"+m.name+"”。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:"advisory",check:"templateStyleCompare",status:diffs.length?"review":"pass",detail,actualValue:diffs.length?diffs.map(([k,label])=>label+": 模板 "+displayProp(k,t.props[k])+"；论文 "+displayProp(k,m.props[k])).join("；"):"未发现超容差差异（比较 "+shared.length+" 项）",evidence:"模板第 "+t.index+" 段使用样式“"+t.name+"”；论文第 "+m.index+" 段使用样式“"+m.name+"”。比较的可读取属性："+shared.map(([,label])=>label).join("、")+"。未完整覆盖所有 run 级直接格式和最终页面渲染。",recommendation:diffs.length?"选中论文对应段落，确认它是否应采用模板样式；按目标模板修正字体、字号、行距、段前后距或缩进，并检查局部格式覆盖。":"当前可解析的匹配样式值与模板基本一致；仍需抽查局部加粗/斜体、图表实际位置和最终分页。",sourceIndex:t.index});
+  out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"模板样式对照："+t.name,text:"机器可读基准：模板 Word 样式“"+t.name+"”；对比论文样式“"+m.name+"”。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:"advisory",check:"templateStyleCompare",status:diffs.length?"review":"pass",detail,actualValue:diffs.length?diffs.map(([k,label])=>label+": 模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)).join("；"):"未发现超容差差异（比较 "+shared.length+" 项）",evidence:"模板第 "+t.index+" 段使用样式“"+t.name+"”；论文第 "+m.index+" 段使用样式“"+m.name+"”。比较的可读取属性："+shared.map(([,label])=>label).join("、")+"。未完整覆盖所有 run 级直接格式和最终页面渲染。",recommendation:diffs.length?"选中论文对应段落，确认它是否应采用模板样式；按目标模板修正字体、字号、行距、段前后距或缩进，并检查局部格式覆盖。":"当前可解析的匹配样式值与模板基本一致；仍需抽查局部加粗/斜体、图表实际位置和最终分页。",sourceIndex:t.index});
  }
  return out;
 }
