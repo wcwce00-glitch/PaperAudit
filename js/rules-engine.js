@@ -105,7 +105,7 @@ function usedStyleSamples(model){
   const name=p.styleName||def?.name||sid;
   if(!sid&&!name)continue;
   const key=sid?"id:"+normalizeStyle(sid):"name:"+normalizeStyle(name);
-  if(!out.has(key))out.set(key,{id:sid,name,props:p.properties||def?.props||{},index:p.index,text:p.text});
+  if(!out.has(key))out.set(key,{id:sid,name,props:p.properties||def?.props||{},runOverrides:p.runOverrides||[],index:p.index,text:p.text});
  }
  return [...out.values()];
 }
@@ -137,12 +137,50 @@ function propDifference(key,a,b,tProps={},mProps={}){
  }
  return String(a).trim().toLowerCase()!==String(b).trim().toLowerCase();
 }
+const DIRECT_RUN_PROPS=[
+ ["font","西文字体"],["fontHAnsi","西文高位字符字体"],["fontEast","东亚字体"],["fontCs","复杂文字字体"],
+ ["fontSizePt","字号"],["bold","加粗"],["italic","斜体"],["underline","下划线"],["color","文字颜色"],
+ ["smallCaps","小型大写字母"],["allCaps","全部大写"],["strike","删除线"]
+];
+const INLINE_BOOL_KEYS=new Set(["bold","italic","smallCaps","allCaps","strike"]);
+function sampleRunProps(sample){
+ const runs=sample?.runOverrides||[];
+ return runs.find(r=>DIRECT_RUN_PROPS.some(([key])=>r[key]!==null&&r[key]!==undefined))||null;
+}
+function effectiveRunProps(sample,run){
+ const out={...(sample.props||{})};
+ if(run)for(const [key] of DIRECT_RUN_PROPS)if(run[key]!==null&&run[key]!==undefined)out[key]=run[key];
+ for(const key of INLINE_BOOL_KEYS)if(out[key]===null||out[key]===undefined)out[key]=false;
+ if(out.underline===null||out.underline===undefined)out.underline="none";
+ return out;
+}
+function compareDirectRunSample(t,m,templateName,manuscriptName){
+ const tr=sampleRunProps(t),mr=sampleRunProps(m);
+ if(!tr&&!mr)return null;
+ const tp=effectiveRunProps(t,tr),mp=effectiveRunProps(m,mr);
+ const keys=DIRECT_RUN_PROPS.filter(([key])=>(tr?.[key]!==null&&tr?.[key]!==undefined)||(mr?.[key]!==null&&mr?.[key]!==undefined));
+ const comparable=keys.filter(([key])=>tp[key]!==null&&tp[key]!==undefined&&mp[key]!==null&&mp[key]!==undefined);
+ const diffs=comparable.filter(([key])=>propDifference(key,tp[key],mp[key],tp,mp));
+ if(!diffs.length)return null;
+ return {
+  id:"CMP-RUN-"+String(t.index).padStart(3,"0"),
+  title:"样式“"+t.name+"”的局部直接格式样例有差异",
+  text:"机器可读基准：模板样式“"+t.name+"”中可读取的 run 级直接格式样例；仅代表样例文字，不是该样式全部文字的统一规则。",
+  originalText:"模板样式“"+t.name+"”中的 Word run 级直接格式属性（局部样例）。",
+  source:"模板 document.xml / styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,
+  strength:"advisory",check:"directRunCompare",status:"review",
+  detail:"模板样例与论文样例的局部格式不同："+diffs.map(([key,label])=>label+"（模板 "+displayProp(key,tp[key],tp)+"；论文 "+displayProp(key,mp[key],mp)+"）").join("；")+"。局部加粗/斜体等差异可能是有意强调，不直接判为违规。",
+  actualValue:diffs.map(([key,label])=>label+"：模板 "+displayProp(key,tp[key],tp)+"；论文 "+displayProp(key,mp[key],mp)).join("；"),
+  evidence:"模板第 "+t.index+" 段的样例 run 与论文第 "+m.index+" 段的样例 run；比较仅覆盖首个可读取的直接格式样例，并非全文每个 run。",
+  recommendation:"在 Word 中检查对应段落的局部字体、字号、颜色、加粗/斜体或下划线；仅在模板确实要求一致时才修改，并复核该段其余 run。"
+ };
+}
 function compareTemplateStyles(templateModel,manuscriptModel,templateName,manuscriptName){
  const ts=usedStyleSamples(templateModel),ms=usedStyleSamples(manuscriptModel);
  const roleCounts=list=>{const m=new Map();for(const s of list){const r=roleForStyle(s.id,s.name);if(r)m.set(r,(m.get(r)||0)+1);}return m;};
  const tc=roleCounts(ts),mc=roleCounts(ms),usedM=new Set(),out=[];
  const props=[
-  ["font","西文字体"],["fontEast","东亚字体"],["fontSizePt","字号"],["alignment","段落对齐"],
+  ["font","西文字体"],["fontHAnsi","西文高位字符字体"],["fontEast","东亚字体"],["fontCs","复杂文字字体"],["fontSizePt","字号"],["alignment","段落对齐"],
   ["lineRule","行距规则"],["lineTwip","行距值"],["beforeTwip","段前距"],["afterTwip","段后距"],
   ["leftTwip","左缩进"],["rightTwip","右缩进"],["firstLineTwip","首行缩进"],["hangingTwip","悬挂缩进"],
   ["bold","加粗"],["italic","斜体"],["underline","下划线"],["smallCaps","小型大写字母"],["allCaps","全部大写"],["strike","删除线"],
@@ -160,6 +198,7 @@ function compareTemplateStyles(templateModel,manuscriptModel,templateName,manusc
    continue;
   }
   usedM.add(m);
+  if(out.length<19){const direct=compareDirectRunSample(t,m,templateName,manuscriptName);if(direct)out.push(direct);}
   const shared=props.filter(([k])=>t.props&&m.props&&t.props[k]!==null&&t.props[k]!==undefined&&m.props[k]!==null&&m.props[k]!==undefined&&t.props[k]!==""&&m.props[k]!=="");
   const diffs=shared.filter(([k])=>propDifference(k,t.props[k],m.props[k],t.props,m.props));
   if(!shared.length){
