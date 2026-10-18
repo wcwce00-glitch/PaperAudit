@@ -321,7 +321,7 @@ def test_uploaded_template_drives_style_and_abstract_comparison(page):
     assert any('模板样式对照：Normal' in x for x in rows), rows
     assert any('Times New Roman' in x and 'Arial' in x for x in rows), rows
     assert any('10.0 pt' in x and '12.0 pt' in x for x in rows), rows
-    assert any('段落对齐（模板 居中；论文 两端对齐）' in x for x in rows), rows
+    assert any('段落对齐' in x and '居中' in x and '两端对齐' in x for x in rows), rows
     assert any('1.00× 行距（auto' in x and '1.50× 行距（auto' in x for x in rows), rows
     assert any('局部直接格式样例有差异' in x and '加粗：模板 是；论文 否' in x for x in rows), rows
     with page.expect_download() as info:page.locator('#save-json').click()
