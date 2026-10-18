@@ -53,7 +53,7 @@
     <section class="hero wrap">
       <div class="hero-copy"><div class="eyebrow"><span class="tiny-diamond"></span>  RESEARCH TOOLS / 科研工具</div>
         <h1>投稿之前，<br><em>先给论文做个体检。</em></h1>
-        <p class="hero-sub">拖入 <strong>Word 论文</strong>，快速检查图表编号、正文引用、数字型参考文献、图片有效分辨率；还可选传目标期刊模板对照页面与写作要求。检测在浏览器中完成，论文无需上传。</p>
+        <p class="hero-sub">上传 <strong>Word 论文 + 目标期刊模板</strong>，按模板中的页面设置、常见样式与明确写作要求逐项对照；也可单独运行通用预检。文件在浏览器本地解析，无需上传到服务器。</p>
         <div class="hero-promises"><span>✓ 免安装</span><span>✓ 中文报告</span><span>✓ 文件不上传</span></div>
         <div class="hero-actions" aria-label="开始使用和参与项目">
           <a class="hero-action hero-action-primary" href="#start">立即免费体验 <span aria-hidden="true">↘</span></a>
@@ -64,10 +64,10 @@
       <div class="hero-art" aria-hidden="true"><div class="fake-document"><div class="doc-top"><span>MANUSCRIPT / 01</span><span>● ● ●</span></div><div class="doc-title">Research manuscript</div><div class="ink w75"></div><div class="ink w95"></div><div class="ink w85"></div><div class="preview-chart"><svg viewBox="0 0 240 90" preserveAspectRatio="none"><path d="M0 68 L32 62 L53 45 L75 58 L98 31 L119 38 L139 15 L161 47 L182 29 L206 39 L240 12" fill="none" stroke="#486c8c" stroke-width="2.5"/><path d="M0 72 L32 67 L53 58 L75 52 L98 44 L119 46 L139 40 L161 50 L182 44 L206 43 L240 39" fill="none" stroke="#bd8c77" stroke-width="2" stroke-dasharray="4 4"/></svg></div><div class="ink w65"></div><div class="ink w80"></div></div><div class="float-note float-green">✓ 结构检查完成</div><div class="float-note float-orange">! 图 3 引用未匹配</div></div>
     </section>
     <section class="workspace-wrap" id="start"><div class="wrap">
-      <div class="workspace-heading"><div><div class="section-kicker">START HERE</div><h2>开始检查</h2><p>添加论文；可选上传期刊模板或查找官方模板入口。</p></div><div class="work-state">论文 → 模板（可选）→ 报告</div></div>
+      <div class="workspace-heading"><div><div class="section-kicker">TEMPLATE-DRIVEN AUDIT</div><h2>用目标模板检查论文</h2><p>上传论文与目标期刊模板；系统会从模板提取可检查的要求，再逐项对照论文。没上传模板时才使用通用预检。</p></div><div class="work-state">论文 + 模板 → 逐项核查报告</div></div>
       <div class="workspace-grid">
         <section class="panel uploader-panel" aria-labelledby="upload-title">
-          <div class="panel-title"><span class="step">01</span><h3 id="upload-title">添加论文或图片</h3></div>
+          <div class="panel-title"><span class="step">01</span><h3 id="upload-title">第一步：上传要检查的论文</h3></div>
           <div class="drop" id="drop-zone" role="button" tabindex="0" aria-label="选择或拖入 DOCX、PNG 或 JPEG 文件"><div class="upload-symbol">↥</div><strong>将文件拖到这里</strong><span>或 <button type="button" class="inline-button" id="choose-file">浏览文件</button></span><small>支持 DOCX · PNG · JPG/JPEG，单文件 ≤30 MB · 最多 10 个 · 总计 ≤80 MB</small></div>
           <input type="file" id="file-input" multiple accept=".docx,.png,.jpg,.jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg" hidden />
           <div id="file-list" class="file-list" aria-live="polite"><div class="file-placeholder">尚未选择文件。可以先试用下方的示例。</div></div>
@@ -75,19 +75,19 @@
           <p class="hint">提示：Word 旧格式 .doc 暂不支持；请在 Word 中另存为 .docx。</p>
         </section>
         <section class="panel config-panel" aria-labelledby="rules-title">
-          <div class="panel-title"><span class="step">02</span><h3 id="rules-title">检查规则</h3></div>
+          <div class="panel-title"><span class="step">03</span><h3 id="rules-title">第三步：设置补充检查项</h3></div>
           <label class="rule-row"><span><b>图表编号与正文引用</b><small>检查缺号、重复编号、未匹配引用</small></span><input type="checkbox" id="check-captions" checked /></label>
           <label class="rule-row"><span><b>参考文献数字编号</b><small>支持 [1]、[1, 3]、[1–4] 等基本形式</small></span><input type="checkbox" id="check-citations" checked /></label>
           <label class="rule-row"><span><b>Word 内嵌图片有效分辨率</b><small>使用文档记录的实际显示宽度计算</small></span><input type="checkbox" id="check-images" checked /></label>
           <div class="control-row"><label for="ppi">最低有效分辨率（自定义规则）</label><div class="control"><input type="number" id="ppi" min="50" max="1200" value="300" step="50"/><span>PPI</span></div></div>
           <p class="fine-print">300 PPI 只是常用示例阈值，不代表所有期刊统一要求。请以目标期刊的正式图稿规定为准。</p>
-          <button class="primary-btn" type="button" id="run-audit" disabled>开始检查 <span>↗</span></button>
+          <button class="primary-btn" type="button" id="run-audit" disabled>开始通用预检 <span>↗</span></button>
           <div id="status" role="status" aria-live="polite" class="status">等待添加文件</div>
         </section>
       </div>
       <section class="panel template-panel" id="template-check" aria-labelledby="template-heading">
-        <div class="panel-title"><span class="step">+</span><h3 id="template-heading">可选：上传目标期刊模板或作者指南</h3><span class="template-feature-tag">模板对照</span></div>
-        <p class="template-desc">没有模板可选择下方的<strong>学科通用预检规则包</strong>；如有期刊官方模板或作者指南，以上传文件优先。通用规则不是任何期刊的正式投稿规范，不代表投稿一定被接受。</p>
+        <div class="panel-title"><span class="step">02</span><h3 id="template-heading">第二步：上传目标期刊模板 / 作者指南</h3><span class="template-feature-tag">模板驱动检查</span></div>
+        <p class="template-desc"><strong>这是本工具针对具体期刊进行格式核查的关键输入。</strong> DOCX/DOTX 用于比较可读取的页面设置、常见段落样式和明确要求；TXT/MD 仅提供文字要求，不包含 Word 版式参数。系统会保留来源与段落位置、显示实际检测值和差异，并把证据不足的项目标为待人工核验。模板不被自动认证为官方当前版本。</p>
         <div class="profile-selector"><label for="profile-select"><strong>内置规则包（未上传模板时生效）</strong></label><select id="profile-select" aria-label="选择学科规则包"></select><span class="muted" id="profile-hint">默认使用英文科研论文通用预检</span></div>
         <div class="template-choose-row"><button type="button" class="secondary-btn" id="choose-template">选择模板 / 指南文件</button><span id="template-info" class="muted">未选择模板：仍可使用下方的官方投稿资源目录</span><button type="button" class="inline-button" id="remove-template" hidden>移除模板</button></div>
         <input type="file" id="template-input" accept=".docx,.dotx,.txt,.md" hidden />
