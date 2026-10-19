@@ -417,3 +417,30 @@ def test_template_is_removable_and_does_not_leak_into_next_audit(page):
     page.locator('#remove-template').click()
     found=run_check(page)
     assert not any('模板' in x for x in found), found
+
+
+def test_explicit_template_text_removal_catches_paper_title_placeholder(page):
+    template=make_styled_docx([
+        'Remove all template text before submission.',
+        'Abstract',
+        'A short abstract.'
+    ])
+    manuscript=make_styled_docx([
+        'Paper Title*',
+        'Abstract',
+        'A short abstract.'
+    ])
+    page.locator('#file-input').set_input_files({
+        'name':'placeholder-manuscript.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':manuscript
+    })
+    page.locator('#template-input').set_input_files({
+        'name':'placeholder-template.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':template
+    })
+    run_check(page)
+    rows=page.locator('.requirement-item').all_inner_texts()
+    assert any('典型模板占位文字' in x and 'Paper Title*' in x for x in rows), rows
+    assert any('有证据支持不符' in x and 'Remove all template text' in x for x in rows), rows
