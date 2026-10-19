@@ -64,7 +64,7 @@
       <div class="hero-art" aria-hidden="true"><div class="fake-document"><div class="doc-top"><span>MANUSCRIPT / 01</span><span>● ● ●</span></div><div class="doc-title">Research manuscript</div><div class="ink w75"></div><div class="ink w95"></div><div class="ink w85"></div><div class="preview-chart"><svg viewBox="0 0 240 90" preserveAspectRatio="none"><path d="M0 68 L32 62 L53 45 L75 58 L98 31 L119 38 L139 15 L161 47 L182 29 L206 39 L240 12" fill="none" stroke="#486c8c" stroke-width="2.5"/><path d="M0 72 L32 67 L53 58 L75 52 L98 44 L119 46 L139 40 L161 50 L182 44 L206 43 L240 39" fill="none" stroke="#bd8c77" stroke-width="2" stroke-dasharray="4 4"/></svg></div><div class="ink w65"></div><div class="ink w80"></div></div><div class="float-note float-green">✓ 结构检查完成</div><div class="float-note float-orange">! 图 3 引用未匹配</div></div>
     </section>
     <section class="workspace-wrap" id="start"><div class="wrap">
-      <div class="workspace-heading"><div><div class="section-kicker">TEMPLATE-DRIVEN AUDIT</div><h2>用目标模板检查论文</h2><p>上传论文与目标期刊模板；系统会从模板提取可检查的要求，再逐项对照论文。没上传模板时才使用通用预检。</p></div><div class="work-state">论文 + 模板 → 逐项核查报告</div></div>
+      <div class="workspace-heading"><div><div class="section-kicker">TEMPLATE-DRIVEN AUDIT</div><h2>用目标模板检查论文</h2><p>主流程以目标期刊模板 / 作者指南为依据，先逐项核查模板要求，再显示通用补充预检。未上传模板时，才退回通用预检。</p></div><div class="work-state">论文 + 模板 → 逐项核查报告</div></div>
       <div class="workspace-grid">
         <section class="panel uploader-panel" aria-labelledby="upload-title">
           <div class="panel-title"><span class="step">01</span><h3 id="upload-title">第一步：上传要检查的论文</h3></div>
@@ -74,27 +74,19 @@
           <button class="sample-button" id="load-sample" type="button">↗ 使用示例论文体验</button>
           <p class="hint">提示：Word 旧格式 .doc 暂不支持；请在 Word 中另存为 .docx。</p>
         </section>
-        <section class="panel config-panel" aria-labelledby="rules-title">
-          <div class="panel-title"><span class="step">可选</span><h3 id="rules-title">补充检查项</h3></div>
-          <label class="rule-row"><span><b>图表编号与正文引用</b><small>检查缺号、重复编号、未匹配引用</small></span><input type="checkbox" id="check-captions" checked /></label>
-          <label class="rule-row"><span><b>参考文献数字编号</b><small>支持 [1]、[1, 3]、[1–4] 等基本形式</small></span><input type="checkbox" id="check-citations" checked /></label>
-          <label class="rule-row"><span><b>Word 内嵌图片有效分辨率</b><small>使用文档记录的实际显示宽度计算</small></span><input type="checkbox" id="check-images" checked /></label>
-          <div class="control-row"><label for="ppi">最低有效分辨率（自定义规则）</label><div class="control"><input type="number" id="ppi" min="50" max="1200" value="300" step="50"/><span>PPI</span></div></div>
-          <p class="fine-print">300 PPI 只是常用示例阈值，不代表所有期刊统一要求。请以目标期刊的正式图稿规定为准。</p>
-        </section>
       </div>
       <section class="panel template-panel" id="template-check" aria-labelledby="template-heading">
         <div class="panel-title"><span class="step">02</span><h3 id="template-heading">第二步：上传目标期刊模板 / 作者指南</h3><span class="template-feature-tag">模板驱动检查</span></div>
-        <p class="template-desc"><strong>这是本工具针对具体期刊进行格式核查的关键输入。</strong> DOCX/DOTX 用于比较可读取的页面设置、常见段落样式和明确要求；TXT/MD 仅提供文字要求，不包含 Word 版式参数。系统会保留来源与段落位置、显示实际检测值和差异，并把证据不足的项目标为待人工核验。模板不被自动认证为官方当前版本。</p>
+        <p class="template-desc"><strong>这是本工具的主要检查依据。</strong>上传后，报告会优先展示从该模板 / 指南提取的要求、可读取的页面与样式对照及其证据；通用预检仅作辅助参考，不能覆盖模板原文。DOCX/DOTX 用于比较可读取的页面设置、常见段落样式和明确要求；TXT/MD 仅提供文字要求，不包含 Word 版式参数。系统会保留来源与段落位置、显示实际检测值和差异，并把证据不足的项目标为待人工核验。模板不被自动认证为官方当前版本。</p>
         <div class="profile-selector"><label for="profile-select"><strong>内置规则包（未上传模板时生效）</strong></label><select id="profile-select" aria-label="选择学科规则包"></select><span class="muted" id="profile-hint">默认使用英文科研论文通用预检</span></div>
-        <div class="template-choose-row"><button type="button" class="secondary-btn" id="choose-template">选择模板 / 指南文件</button><span id="template-info" class="muted">未选择模板：仍可使用下方的官方投稿资源目录</span><button type="button" class="inline-button" id="remove-template" hidden>移除模板</button></div>
+        <div class="template-choose-row"><button type="button" class="secondary-btn" id="choose-template">选择模板 / 指南文件</button><span id="template-info" class="muted">建议先上传目标模板 / 作者指南；无模板时只能进行通用预检</span><button type="button" class="inline-button" id="remove-template" hidden>移除模板</button></div>
         <input type="file" id="template-input" accept=".docx,.dotx,.txt,.md" hidden />
         <div class="ai-tools"><label class="rule-row"><span><b>免费浏览器本地 AI · 实验选项</b><small>WebLLM + Qwen2.5 0.5B。需要 WebGPU，首次下载约数百 MB；只辅助补充候选条款，不自动判定违规。</small></span><input type="checkbox" id="ai-consent" /></label><button type="button" class="secondary-btn" id="run-local-ai">从已上传模板提议补充条款（可选）</button><div class="muted" id="ai-status" role="status">默认关闭。不需要付费 API；启用后从第三方站点下载运行组件和模型文件，论文和模板本身仍在本地解析。</div></div>
         <div class="template-boundary">注意：用户上传的模板不等于已核实的期刊规范；上传用于检查不会自动公开，也不会自动保存到模板库。只有主动点击“保存到我的模板库”才会保存在此浏览器。</div>
       </section>
       <section class="panel audit-action" aria-labelledby="audit-action-heading">
         <div class="audit-action-copy"><span class="step">03</span><h3 id="audit-action-heading">开始逐项核查并生成报告</h3><p>已上传模板时，按该模板与论文逐项对照；没有模板时才运行通用预检。HTML / JSON 报告会保留规则原文、来源、检测值、判断依据和建议。</p></div>
-        <div class="audit-action-control"><button class="primary-btn" type="button" id="run-audit" disabled>开始通用预检 <span>↗</span></button><div id="status" role="status" aria-live="polite" class="status">等待添加论文</div></div>
+        <div class="audit-action-control"><button class="primary-btn" type="button" id="run-audit" disabled>仅运行通用预检 <span>↗</span></button><div id="status" role="status" aria-live="polite" class="status">等待添加论文</div></div>
       </section>
       <section class="panel community-panel" id="community-library" aria-labelledby="community-heading">
         <div class="panel-title"><span class="step">04</span><h3 id="community-heading">我的模板库 · 社区共享</h3><span class="template-feature-tag">模板共享</span></div>
@@ -118,9 +110,10 @@
       <section class="results" id="results" hidden aria-labelledby="result-heading">
         <div class="results-top"><div><div class="section-kicker">AUDIT RESULTS</div><h2 id="result-heading">检查报告 <span id="report-file" class="muted"></span></h2></div><div class="result-actions"><button class="secondary-btn" id="save-html" type="button">下载 HTML 报告</button><button class="secondary-btn" id="save-json" type="button">下载 JSON</button></div></div>
         <div class="stat-grid"><div><strong id="count-total">0</strong><span>检查发现</span></div><div><strong id="count-warning">0</strong><span>需要关注</span></div><div><strong id="count-unverified">0</strong><span>无法自动验证</span></div><div><strong id="count-images">0</strong><span>已解析图片</span></div></div>
+        <section class="requirements-panel" id="requirements-panel" hidden><h3 id="requirements-heading">目标模板要求 · 优先逐项核查</h3><div id="requirements-summary" class="muted"></div><div id="requirements-list" class="requirements-list"></div></section>
+        <h3 id="findings-heading" class="finding-section-heading">通用补充预检（辅助参考）</h3>
         <div class="report-filter" role="group" aria-label="筛选报告"><button type="button" class="filter active" data-filter="all">全部</button><button type="button" class="filter" data-filter="warning">需关注</button><button type="button" class="filter" data-filter="unverified">待人工确认</button></div>
         <div id="findings" class="findings"></div>
-        <section class="requirements-panel" id="requirements-panel" hidden><h3>投稿规范逐项核查</h3><div id="requirements-summary" class="muted"></div><div id="requirements-list" class="requirements-list"></div></section>
         <div id="coverage" class="coverage"></div>
       </section>
     </div></section>

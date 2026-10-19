@@ -90,13 +90,18 @@ def test_sample_flags_image_quality_and_keeps_uncertain_references_review_only(p
     assert info.value.suggested_filename == 'PaperAudit-report.html'
 
 
-def test_disable_checks_changes_results(page):
-    page.locator('#file-input').set_input_files(str(ROOT / 'examples/sample_manuscript.docx'))
-    page.locator('#check-captions').uncheck()
-    page.locator('#check-citations').uncheck()
-    found = run_check(page)
-    assert len(found) == 1
-    assert '有效分辨率不足' in found[0]
+def test_template_first_layout_removes_optional_supplementary_card(page):
+    assert page.locator('.config-panel').count() == 0
+    assert page.locator('#check-captions').count() == 0
+    assert page.locator('#check-citations').count() == 0
+    assert page.locator('#check-images').count() == 0
+    assert page.locator('#ppi').count() == 0
+    assert '主要检查依据' in page.locator('#template-check').inner_text()
+    # The primary template rule panel must precede supplementary findings in the page DOM.
+    follows = page.locator('#requirements-panel').evaluate(
+        "el => Boolean(el.compareDocumentPosition(document.querySelector('#findings-heading')) & Node.DOCUMENT_POSITION_FOLLOWING)"
+    )
+    assert follows
 
 
 def test_standalone_image_ppi_requires_display_width(page):
@@ -176,7 +181,6 @@ def test_valid_reference_and_subfigures_are_not_flagged(page):
         '参考文献',
         '[1] Synthetic paper.',
     ])
-    page.locator('#check-images').uncheck()
     page.locator('#file-input').set_input_files({
         'name':'positive.docx',
         'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -186,11 +190,11 @@ def test_valid_reference_and_subfigures_are_not_flagged(page):
     assert found == [], found
 
 
-def test_higher_user_ppi_threshold_changes_detection(page):
+def test_supplementary_image_ppi_uses_conservative_default(page):
     page.locator('#file-input').set_input_files(str(ROOT / 'examples/sample_manuscript.docx'))
-    page.locator('#ppi').fill('100')
     found = run_check(page)
-    assert not any('有效分辨率不足' in x for x in found), found
+    assert any('有效分辨率不足' in x for x in found), found
+    assert page.locator('#ppi').count() == 0
 
 
 def make_template_docx(note='本刊稿件必须包含摘要。', width='11906', margin='1440'):
@@ -380,8 +384,9 @@ def test_explicit_abstract_character_limit_is_actually_checked(page):
     guide='摘要不得超过80字。'.encode()
     page.locator('#file-input').set_input_files({'name':'target.docx','mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','buffer':manuscript})
     page.locator('#template-input').set_input_files({'name':'official-guide-copied.txt','mimeType':'text/plain','buffer':guide})
-    found=run_check(page)
-    assert any('摘要不得超过80字' in x for x in found),found
+    run_check(page)
+    rows=page.locator('.requirement-item').all_inner_texts()
+    assert any('摘要不得超过80字' in x and '有证据支持不符' in x for x in rows), rows
 
 
 def test_template_is_removable_and_does_not_leak_into_next_audit(page):

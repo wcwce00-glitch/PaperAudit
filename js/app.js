@@ -22,9 +22,9 @@ function syncTemplateMode(){
     ?'模板驱动模式已启用：将以你上传的模板/指南为基准；通用规则包不会代替该模板。'
     :'未上传模板时使用所选的通用预检规则包；它不代表任何特定期刊的官方要求。';
   const state=document.querySelector('.work-state');
-  if(state)state.textContent=withTemplate?'论文 + 已上传模板 → 模板驱动核查':'论文 → 通用预检（可上传模板切换模式）';
+  if(state)state.textContent=withTemplate?'论文 + 已上传模板 → 优先核查模板要求':'论文 → 仅通用预检（建议先上传目标模板）';
   const button=el('run-audit');
-  if(button&&!button.disabled)button.innerHTML=withTemplate?'按上传模板逐项检查 <span>↗</span>':'开始通用预检 <span>↗</span>';
+  if(button&&!button.disabled)button.innerHTML=withTemplate?'按上传模板逐项检查 <span>↗</span>':'仅运行通用预检 <span>↗</span>';
 }
 function checkSelection(candidate, others=files){
   if(candidate.size===0)return '不接受空文件';
@@ -72,11 +72,14 @@ el('load-sample').addEventListener('click',async()=>{
 function render(result){
   el('results').hidden=false;
   el('report-file').textContent=result.files.map(f=>f.name).join('、');
-  el('count-total').textContent=result.findings.length;
-  el('count-warning').textContent=result.findings.filter(x=>x.level==='warning').length;
-  el('count-unverified').textContent=result.findings.filter(x=>x.level==='unverified').length;
-  el('count-images').textContent=result.coverage.imagesChecked;
   const templateMode=!!result.template?.isUserTemplate || !!result.rulesAudit?.isUserTemplate;
+  const ruleStats=result.rulesAudit?.stats||{fail:0,review:0};
+  el('count-total').textContent=result.findings.length+ruleStats.fail+ruleStats.review;
+  el('count-warning').textContent=result.findings.filter(x=>x.level==='warning').length+ruleStats.fail;
+  el('count-unverified').textContent=result.findings.filter(x=>x.level==='unverified').length+ruleStats.review;
+  el('count-images').textContent=result.coverage.imagesChecked;
+  const findingsHeading=el('findings-heading');
+  if(findingsHeading)findingsHeading.textContent=templateMode?'通用补充预检（辅助参考，不覆盖模板要求）':'通用预检发现';
   el('coverage').textContent=`模式：${templateMode?'用户模板驱动核查':'通用预检规则包'} · 已扫描 ${result.coverage.filesScanned} 个文件 · 识别 ${result.coverage.paragraphs} 个段落 · 图题 ${result.coverage.figCaptions} · 表题 ${result.coverage.tableCaptions} · 可解析图片 ${result.coverage.imagesChecked}。${templateMode?`模板：${result.template?.name||result.rulesAudit?.name}（按用户提供材料作参照，未独立核实其官方权威性）；逐项核查 ${result.coverage.templateInstructions||0} 项。`:`未上传目标模板；使用通用预检规则包：${result.rulesAudit?.name||'所选规则'}。` }自动对照与无法可靠判断的项目会单独标注；仍需人工审阅。`;
   document.querySelectorAll('.filter').forEach(b=>{b.classList.toggle('active',b.dataset.filter==='all');});
   renderFindings(result,'all');
@@ -88,6 +91,8 @@ function renderRequirements(audit){
   if(!area||!target)return;
   target.replaceChildren();area.hidden=!audit;
   if(!audit)return;
+  const heading=el('requirements-heading');
+  if(heading)heading.textContent=audit.isUserTemplate?'目标模板要求 · 优先逐项核查':'通用规则包 · 逐项核查';
   el('requirements-summary').textContent='审核依据：'+audit.name+'。来源说明：'+audit.source+'。共 '+audit.stats.total+' 条：已核查符合 '+audit.stats.pass+'，确认不符 '+audit.stats.fail+'，待核验 '+audit.stats.review+'。无法可靠判断的项目不会被报告为违规。';
   for(const rule of audit.requirements){
     const item=document.createElement('article');item.className='requirement-item';
@@ -236,12 +241,11 @@ el('run-local-ai').addEventListener('click',async()=>{
 });
 el('run-audit').addEventListener('click',async()=>{
   if(!files.length)return;
-  const ppi=Number(el('ppi').value);
-  if(!Number.isFinite(ppi)||ppi<50||ppi>1200){el('status').textContent='请输入 50–1200 之间的 PPI 阈值';return;}
-  const button=el('run-audit');button.disabled=true;button.textContent='正在按模板提取并对照……';el('status').textContent='正在浏览器本地解析论文与模板；不会上传文件';
+  const button=el('run-audit');button.disabled=true;button.textContent='正在按模板提取并对照……';
+  el('status').textContent=templateFile?'正在优先核查目标模板要求，并运行通用补充预检；不会上传文件':'正在运行通用预检。上传目标模板后可按期刊要求逐项核查；文件不会上传';
   try {
     await new Promise(r=>setTimeout(r,30));
-    lastResult=await inspectFiles(files,{captions:el('check-captions').checked,citations:el('check-citations').checked,images:el('check-images').checked,ppi});
+    lastResult=await inspectFiles(files,{captions:true,citations:true,images:true,ppi:300});
     const docxFiles=files.filter(f=>/\.docx$/i.test(f.name));
     const failedFiles=new Set(lastResult.findings.filter(x=>x.code==='FILE-ERROR').map(x=>x.location));
     const validDocxFiles=docxFiles.filter(f=>!failedFiles.has(f.name));
@@ -279,15 +283,13 @@ el('run-audit').addEventListener('click',async()=>{
         candidateInstructions:comparisonTemplate?.candidateInstructions||audits[0].requirements.filter(x=>x.sourceParagraph).map(x=>({location:x.source||x.sourceFile||'模板规则',text:x.originalText||x.text||''})),
         statement:audits[0].source
       };
-      for(const rule of requirements.filter(x=>x.status==='fail')){
-        lastResult.findings.push({level:'warning',code:'RULE-'+rule.id,title:'有证据支持不符：'+rule.title,location:`${rule.checkedDocument} · ${rule.sourceFile||rule.source||'模板规则'}`,detail:rule.actualValue||rule.detail,evidence:rule.evidence,advice:rule.recommendation||rule.action||'按模板原文核对并修改。'});
-      }
     }else if(templateFile){
       lastResult.template={...(comparisonTemplate||{}),name:templateFile.name,kind:'用户上传模板 / 指南',isUserTemplate:true,verifiedOfficial:false};
     }
     render(lastResult);
     const mode=templateFile?'模板驱动检查':'通用预检';
-    el('status').textContent=`${mode}完成：${lastResult.findings.length} 项需关注或待确认事项；${lastResult.rulesAudit?.stats.total||0} 条逐项规则已列出`;
+    const ruleStats=lastResult.rulesAudit?.stats||{fail:0,review:0,total:0};
+    el('status').textContent=`${mode}完成：${lastResult.findings.length+ruleStats.fail+ruleStats.review} 项需关注或待核验；逐项规则共 ${ruleStats.total} 条（不符 ${ruleStats.fail}，待核验 ${ruleStats.review}）`;
   }catch(err){
     el('status').textContent=`检查失败：${err.message||err}`;
   }finally{
