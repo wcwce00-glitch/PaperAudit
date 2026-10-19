@@ -46,7 +46,7 @@ Uploaded templates are not automatically authenticated as official or current. N
 
 ## Real-template validation
 
-The browser CI includes an opt-in end-to-end test enabled in GitHub Actions. It downloads an official public university DOCX template (UC Irvine first, Cornell as a fallback), makes a temporary copy with a deliberate six-tenths-inch left-margin change, uploads the original as the template and the changed copy as the manuscript, and checks the exported JSON for a confirmed, actionable mismatch with both values. The source DOCX and modified copy are temporary CI inputs; they are not committed to the repository. This validates a real-world DOCX package and the complete browser/report flow, not every clause of a university's formatting manual or a complete thesis submission.
+The browser CI includes an opt-in end-to-end test enabled in GitHub Actions. It downloads an official public university DOCX template (UC Irvine first, Cornell as a fallback), makes a temporary copy with a deliberate quarter-inch left-margin change, uploads the original as the template and the changed copy as the manuscript, and checks the exported JSON for a confirmed, actionable mismatch with both values. The source DOCX and modified copy are temporary CI inputs; they are not committed to the repository. This validates a real-world DOCX package and the complete browser/report flow, not every clause of a university's formatting manual or a complete thesis submission.
 
 See the [validation procedure and source links](docs/public-template-validation.md). Public downloads can change, so the workflow logs the source it actually validated; synthetic fixtures remain the deterministic regression baseline.
 
