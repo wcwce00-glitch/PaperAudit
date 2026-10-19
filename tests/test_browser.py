@@ -265,9 +265,12 @@ def test_uploaded_template_page_size_mismatch(page):
 
 
 
-def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', margin='1440', alignment='left', line='240', direct_bold_first=False):
+def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', margin='1440', alignment='left', line='240', direct_bold_first=False, direct_alignment_first=None):
     paragraphs = ''.join(
-        '<w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r>'
+        '<w:p><w:pPr><w:pStyle w:val="Normal"/>'
+        + (f'<w:jc w:val="{escape(direct_alignment_first)}"/>' if direct_alignment_first and i == 0 else '')
+        + '</w:pPr>'
+        + '<w:r>'
         + ('<w:rPr><w:b w:val="1"/></w:rPr>' if direct_bold_first and i == 0 else '')
         + '<w:t>' + escape(t) + '</w:t></w:r></w:p>'
         for i, t in enumerate(lines)
@@ -335,6 +338,24 @@ def test_uploaded_template_drives_style_and_abstract_comparison(page):
     audit_rules=result['rulesAudit']['requirements']
     assert any(x.get('checkedDocument')=='synthetic-manuscript.docx' and x['status']=='review' and 'Normal' in x['title'] for x in audit_rules), audit_rules
     assert any(x['status']=='fail' and 'abstract' in x['title'].lower() for x in audit_rules), audit_rules
+
+
+def test_direct_paragraph_alignment_overrides_are_compared(page):
+    template=make_styled_docx(['Abstract','Template body'], alignment='left')
+    manuscript=make_styled_docx(['Abstract','Manuscript body'], alignment='left', direct_alignment_first='center')
+    page.locator('#file-input').set_input_files({
+        'name':'direct-format-manuscript.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':manuscript
+    })
+    page.locator('#template-input').set_input_files({
+        'name':'direct-format-template.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':template
+    })
+    run_check(page)
+    rows=page.locator('.requirement-item').all_inner_texts()
+    assert any('段落对齐' in x and '左对齐' in x and '居中' in x for x in rows), rows
 
 
 def test_rule_panel_identifies_each_checked_manuscript(page):
