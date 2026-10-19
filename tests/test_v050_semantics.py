@@ -168,3 +168,26 @@ def test_chinese_guidelines_keep_verbatim_source_and_unknown_checks_as_review(lo
     assert all(x["status"] in ("pass","fail","review") for x in actual)
     assert any(x["check"]=="manual" and x["status"]=="review" for x in actual)
     assert all(x["status"]!="fail" for x in actual if x["check"]=="manual")
+
+
+def test_template_page_margin_mismatch_is_actionable_failure(local_page):
+    # Synthetic public fixture only: paper left margin is 720 twips; template is 1440.
+    paper=fake_docx().replace(b'w:left="1440"', b'w:left="720"')
+    loaded_files(local_page,paper=paper)
+    src=module_url("rules-engine.js")
+    actual=local_page.evaluate("""async src => {
+      const m=await import(src);
+      const a=await m.createRulesAudit(
+        document.querySelector("#paper").files[0],
+        {templateFile:document.querySelector("#template").files[0]}
+      );
+      return a.requirements.filter(x=>x.check==="styleCompare").map(x=>({
+        status:x.status,detail:x.detail,evidence:x.evidence,recommendation:x.recommendation
+      }));
+    }""",src)
+    assert actual
+    assert actual[0]["status"]=="fail"
+    assert "左页边距" in actual[0]["detail"]
+    assert "模板 1440" in actual[0]["detail"]
+    assert "论文 720" in actual[0]["detail"]
+    assert "修正 Word 页面设置" in actual[0]["recommendation"]
