@@ -208,3 +208,30 @@ def test_extra_section_is_not_alone_a_confirmed_format_error(local_page):
     assert actual and actual[0]["status"]=="review"
     assert "分节数不同" in actual[0]["detail"]
     assert "不能仅凭这一点认定格式错误" in actual[0]["detail"]
+
+
+def test_common_quantified_abstract_limit_wording_is_extracted_as_explicit_rule(local_page):
+    loaded_files(local_page)
+    guide = "摘要最多200字。\\n摘要控制在300字以内。\\nAbstract should not exceed 250 words."
+    local_page.locator("#template").set_input_files({
+        "name": "abstract-limits.txt",
+        "mimeType": "text/plain",
+        "buffer": guide.encode("utf-8"),
+    })
+    src = module_url("rules-engine.js")
+    actual = local_page.evaluate("""async src => {
+      const m = await import(src);
+      const a = await m.createRulesAudit(
+        document.querySelector("#paper").files[0],
+        {templateFile: document.querySelector("#template").files[0]}
+      );
+      return a.requirements.filter(x => x.check === "abstractLimit").map(x => ({
+        originalText: x.originalText, strength: x.strength, params: x.params, status: x.status
+      }));
+    }""", src)
+    assert len(actual) == 3, actual
+    assert [x["params"]["max"] for x in actual] == [200, 300, 250], actual
+    assert all(x["strength"] == "mandatory" for x in actual), actual
+    # The synthetic manuscript has no reliably delimited abstract, so it must
+    # remain review rather than inventing a pass/fail result.
+    assert all(x["status"] == "review" for x in actual), actual
