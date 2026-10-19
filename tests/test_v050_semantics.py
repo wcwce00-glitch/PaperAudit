@@ -193,7 +193,7 @@ def test_template_page_margin_mismatch_is_actionable_failure(local_page):
     assert "左页边距" in actual[0]["detail"]
     assert "模板 1440" in actual[0]["detail"]
     assert "论文 720" in actual[0]["detail"]
-    assert "修正 Word 页面设置" in actual[0]["recommendation"]
+    assert "Word 的“布局/页面设置”" in actual[0]["recommendation"]
 
 
 def test_extra_section_is_not_alone_a_confirmed_format_error(local_page):
