@@ -19,7 +19,7 @@ This is a reproducible manual acceptance test using public university templates.
 The browser CI now runs an opt-in public-template test. It tries the official UC Irvine Accessible Master's Thesis Template 2025 download first and falls back to Cornell's public dissertation introduction template if the first download cannot be retrieved. The test:
 
 1. Confirms the downloaded source is a valid DOCX ZIP package.
-2. Creates a temporary copy and increases the left margin in every section with a readable numeric margin by 360 twips (0.25 inch? **Note:** Word uses 1440 twips per inch; 360 twips is 0.25 inch).
+2. Creates a temporary copy and increases the left margin in every section with a readable numeric margin by 360 twips (0.25 inch; Word uses 1440 twips per inch).
 3. Uploads the untouched source as the template and the modified copy as the manuscript through the real HTTP-served app.
 4. Exports JSON and asserts that the page-setup comparison reports a confirmed failure with template/manuscript values.
 
