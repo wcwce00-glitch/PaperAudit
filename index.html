@@ -77,7 +77,7 @@
       </div>
       <section class="panel template-panel" id="template-check" aria-labelledby="template-heading">
         <div class="panel-title"><span class="step">02</span><h3 id="template-heading">第二步：上传目标期刊模板 / 作者指南</h3><span class="template-feature-tag">模板驱动检查</span></div>
-        <p class="template-desc"><strong>这是本工具针对具体期刊进行格式核查的关键输入。</strong> DOCX/DOTX 用于比较可读取的页面设置、常见段落样式和明确要求；TXT/MD 仅提供文字要求，不包含 Word 版式参数。系统会保留来源与段落位置、显示实际检测值和差异，并把证据不足的项目标为待人工核验。模板不被自动认证为官方当前版本。</p>
+        <p class="template-desc"><strong>这是本工具针对具体期刊进行格式核查的关键输入。</strong> 上传模板后，主报告以模板中可提取的要求和可读取的版式为依据；与模板无关的通用图表、引文和图片分辨率提示不会混入模板主报告。未上传模板时才使用内置通用预检。DOCX/DOTX 用于比较可读取的页面设置、常见段落样式和明确要求；TXT/MD 仅提供文字要求，不包含 Word 版式参数。系统会保留来源与段落位置、显示实际检测值和差异，并把证据不足的项目标为待人工核验。模板不被自动认证为官方当前版本。</p>
         <div class="profile-selector"><label for="profile-select"><strong>内置规则包（未上传模板时生效）</strong></label><select id="profile-select" aria-label="选择学科规则包"></select><span class="muted" id="profile-hint">默认使用英文科研论文通用预检</span></div>
         <div class="template-choose-row"><button type="button" class="secondary-btn" id="choose-template">选择模板 / 指南文件</button><span id="template-info" class="muted">未选择模板：仍可使用下方的官方投稿资源目录</span><button type="button" class="inline-button" id="remove-template" hidden>移除模板</button></div>
         <input type="file" id="template-input" accept=".docx,.dotx,.txt,.md" hidden />
