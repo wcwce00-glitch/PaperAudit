@@ -45,7 +45,7 @@ function checkRule(rule,manuscript,template){
   const pieces=[];if(inline)pieces.push(inline);
   for(let i=start+1;i<paras.length&&i<start+13;i++){
    const p=paras[i],t=p.text.trim();
-   if(/^(?:关键词|关键字|key\s*words?|index\s*terms|references|bibliography|参考文献|引言|绪论|introduction|1\s*[.]?\s+introduction)\b/i.test(t))break;
+   if(/^(?:关键词|关键字|key\s*words?|index\s*terms|references|bibliography|参考文献|引言|绪论|introduction|1\s*[.]?\s+introduction)(?=\s|[:：.]|$)/i.test(t))break;
    if(/^(?:\d+(?:\.\d+)*\s+).{0,80}$/.test(t)&&/^(?:\d+(?:\.\d+)*\s+)?(?:introduction|引言|绪论|methods?|方法|materials|结果|results|讨论|discussion)\b/i.test(t))break;
    if(/^(?:heading|标题)\s*[1-3]$/i.test(p.styleName||""))break;
    if(t)pieces.push(t);
