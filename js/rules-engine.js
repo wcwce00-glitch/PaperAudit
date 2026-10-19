@@ -19,8 +19,8 @@ function classify(s){
  if(/(?:template\s+text\s+is\s+removed|remove\s+(?:all\s+)?template\s+text|删除.{0,15}(?:模板|占位)文字)/i.test(s))return {check:"placeholder",params:{}};
  if(/(?:A4\s+paper|A4\s+paper\s+size|A4\s+纸)/i.test(s))return {check:"a4",params:{}};
  if(/(?:number\s+equations\s+consecutively|公式.{0,10}连续编号)/i.test(s))return {check:"equationNumbers",params:{}};
- const zh=/(?:摘要|Abstract).{0,40}?(?:不得超过|不超过|最多|至多|上限为|控制在)\s*(\d{2,4})\s*(字|词)(?:以内)?/i.exec(s);
- const en=/\babstract\b.{0,60}?(?:no\s+more\s+than|at\s+most|maximum\s+of|(?:must|shall|should|may)\s+not\s+exceed|not\s+exceed|up\s+to|within)\s*(\d{2,4})\s*words/i.exec(s);
+ const zh=/(?:摘要|Abstract).{0,40}?(?:不得超过|不应超过|不超过|不多于|最多|至多|限|上限为|控制在)\s*(\d{2,4})\s*(字|词)(?:以内)?/i.exec(s);
+ const en=/\babstract\b.{0,60}?(?:no\s+more\s+than|no\s+longer\s+than|at\s+most|maximum(?:\s+of)?|max\.?|(?:must|shall|should|may)\s+not\s+exceed|not\s+exceed|up\s+to|within)\s*(\d{2,4})\s*words/i.exec(s);
  if(zh)return {check:"abstractLimit",params:{max:+zh[1],language:zh[2]==="词"?"en":"zh"}};
  if(en)return {check:"abstractLimit",params:{max:+en[1],language:"en"}};
  return {check:"manual",params:{}};
