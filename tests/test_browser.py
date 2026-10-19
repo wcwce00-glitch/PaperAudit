@@ -253,7 +253,7 @@ def test_uploaded_template_page_size_mismatch(page):
     page.locator('#template-input').set_input_files({'name':'sizing.docx','mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','buffer':template})
     run_check(page)
     rows=page.locator('.requirement-item').all_inner_texts()
-    assert any('已确认与上传模板存在页面版式差异' in x for x in rows), rows
+    assert any('已确认与上传模板存在可量化的页面版式差异' in x for x in rows), rows
     assert any('S-paper' in x and '有证据支持不符' in x for x in rows), rows
     with page.expect_download() as info:page.locator('#save-json').click()
     import json
