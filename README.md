@@ -44,6 +44,19 @@ Known limitations include complex Word SEQ/REF fields and automatic numbering, c
 
 Uploaded templates are not automatically authenticated as official or current. Natural-language requirements may be extracted as candidates but still need a human to check wording and applicability. The fictional `examples/DEMO_NOT_OFFICIAL_template.docx` is for testing only and must not be used for a real submission.
 
+## Real-template validation
+
+The browser CI includes an opt-in end-to-end test enabled in GitHub Actions. It downloads an official public university DOCX template (UC Irvine first, Cornell as a fallback), makes a temporary copy with a deliberate quarter-inch left-margin change, uploads the original as the template and the changed copy as the manuscript, and checks the exported JSON for a confirmed, actionable mismatch with both values. The source DOCX and modified copy are temporary CI inputs; they are not committed to the repository. This validates a real-world DOCX package and the complete browser/report flow, not every clause of a university's formatting manual or a complete thesis submission.
+
+See the [validation procedure and source links](docs/public-template-validation.md). Public downloads can change, so the workflow logs the source it actually validated; synthetic fixtures remain the deterministic regression baseline.
+
+## Help more researchers discover PaperAudit
+
+- [Try the live app](https://wcwce00-glitch.github.io/PaperAudit/) with a non-sensitive DOCX and your target template.
+- If it helps your workflow, **star this repository** so other researchers can discover it.
+- Share the demo with lab mates, graduate-writing groups, librarians, and research-support staff who help people prepare submissions.
+- Found a false positive or missed template rule? [Open a focused issue](https://github.com/wcwce00-glitch/PaperAudit/issues/new) with the template's public source link, rule wording, and a synthetic reproduction. Do not attach unpublished manuscripts or private documents.
+
 ## Development and tests
 
 Install Python 3 and a compatible browser test environment, then run:

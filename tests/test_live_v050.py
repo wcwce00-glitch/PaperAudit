@@ -109,3 +109,103 @@ def test_ai_is_off_by_default_and_explicit_consent_required(live_page):
     p.locator('#template-input').set_input_files({'name':'strict-template.docx','mimeType':typ,'buffer':fake_docx(strict=True)})
     p.locator('#run-local-ai').click()
     assert '请先勾选同意' in p.locator('#ai-status').inner_text()
+
+
+@pytest.mark.skipif(os.environ.get('PAPERAUDIT_PUBLIC_TEMPLATE_TESTS') != '1',
+                    reason='Set PAPERAUDIT_PUBLIC_TEMPLATE_TESTS=1 to fetch and test an official public DOCX')
+def test_official_public_template_detects_real_docx_page_margin_change(live_page, tmp_path):
+    """Exercise the real browser flow with a public university DOCX and a modified copy.
+
+    Only the public template is downloaded. The manuscript is a temporary local
+    copy with its section margins deliberately changed; no research manuscript
+    or document content is uploaded to a PaperAudit server or committed.
+    """
+    import io
+    import time
+    import urllib.error
+    import urllib.request
+    import zipfile
+    import xml.etree.ElementTree as ET
+
+    sources = [
+        ("UC Irvine Accessible Master's Thesis Template 2025",
+         "https://guides.lib.uci.edu/ld.php?content_id=70078581"),
+        ("Cornell Graduate School dissertation introduction template",
+         "https://gradschool.cornell.edu/wp-content/uploads/2018/06/dissertation_template071911.docx"),
+    ]
+    source_label = None
+    original = None
+    errors = []
+    for label, url in sources:
+        for attempt in range(3):
+            try:
+                request = urllib.request.Request(
+                    url, headers={"User-Agent": "PaperAudit-public-template-validation/1.0"}
+                )
+                with urllib.request.urlopen(request, timeout=30) as response:
+                    candidate = response.read()
+                if not zipfile.is_zipfile(io.BytesIO(candidate)):
+                    raise ValueError("official download did not return a valid DOCX/ZIP file")
+                with zipfile.ZipFile(io.BytesIO(candidate)) as archive:
+                    if "word/document.xml" not in archive.namelist():
+                        raise ValueError("DOCX is missing word/document.xml")
+                source_label, original = label, candidate
+                break
+            except Exception as exc:
+                errors.append(f"{label} attempt {attempt + 1}: {exc}")
+                if attempt < 2:
+                    time.sleep(2 ** attempt)
+        if original is not None:
+            break
+    assert original is not None, "Could not download a valid official public DOCX: " + " | ".join(errors)
+
+    # Change the left margin in every section while retaining all other DOCX parts.
+    entries = {}
+    with zipfile.ZipFile(io.BytesIO(original)) as archive:
+        entries = {item.filename: archive.read(item.filename) for item in archive.infolist()}
+    root = ET.fromstring(entries["word/document.xml"])
+    changed = 0
+    for node in root.iter():
+        if node.tag.split("}")[-1] != "pgMar":
+            continue
+        key = next((k for k in node.attrib if k.split("}")[-1] == "left"), None)
+        current = node.attrib.get(key) if key else None
+        if current is not None and current.isdigit():
+            node.attrib[key] = str(int(current) + 360)  # a quarter inch
+            changed += 1
+    assert changed > 0, f"{source_label}: no numeric section left margin was found to mutate"
+    entries["word/document.xml"] = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    mutated_path = tmp_path / "public-template-with-deliberate-margin-error.docx"
+    with zipfile.ZipFile(mutated_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, data in entries.items():
+            archive.writestr(name, data)
+    mutated = mutated_path.read_bytes()
+
+    p = live_page
+    typ = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    p.locator("#file-input").set_input_files({
+        "name": "public-template-mutated-manuscript.docx",
+        "mimeType": typ,
+        "buffer": mutated,
+    })
+    p.locator("#template-input").set_input_files({
+        "name": "official-public-template.docx",
+        "mimeType": typ,
+        "buffer": original,
+    })
+    p.locator("#run-audit").click()
+    p.locator("#results").wait_for(state="visible", timeout=30000)
+    with p.expect_download() as dl:
+        p.locator("#save-json").click()
+    report = json.loads(Path(dl.value.path()).read_text(encoding="utf-8"))
+    requirements = report["rulesAudit"]["requirements"]
+    page_checks = [row for row in requirements if row.get("check") == "styleCompare"]
+    assert page_checks, f"{source_label}: no template page-setup comparison was emitted"
+    assert any(
+        row.get("status") == "fail"
+        and "左页边距" in row.get("detail", "")
+        and "模板" in row.get("detail", "")
+        and "论文" in row.get("detail", "")
+        for row in page_checks
+    ), f"{source_label}: the deliberately changed margin was not reported as an actionable failure: {page_checks}"
+    print(f"PUBLIC TEMPLATE VALIDATION PASSED: {source_label}; mutated {changed} section margin(s); confirmed actionable template mismatch in exported JSON.")
