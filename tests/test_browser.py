@@ -464,14 +464,12 @@ def test_common_caption_placement_phrasings_are_recognized_but_not_auto_failed(p
         'mimeType':'text/plain',
         'buffer':guide
     })
-    src=module_url('rules-engine.js')
-    actual=page.evaluate('''async src => {
-      const m=await import(src);
-      const a=await m.createRulesAudit(document.querySelector('#file-input').files[0], {
+    actual=page.evaluate('''async () => {
+      const a=await window.createRulesAudit(document.querySelector('#file-input').files[0], {
         templateFile:document.querySelector('#template-input').files[0]
       });
       return a.requirements.map(x=>({text:x.originalText,check:x.check,status:x.status}));
-    }''',src)
+    }''')
     assert sum(x['check']=='figurePlacement' for x in actual)==2, actual
     assert sum(x['check']=='tablePlacement' for x in actual)==2, actual
     assert all(x['status']=='review' for x in actual if x['check'] in ('figurePlacement','tablePlacement')), actual
