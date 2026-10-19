@@ -109,7 +109,7 @@ function usedStyleSamples(model){
   const name=p.styleName||def?.name||sid;
   if(!sid&&!name)continue;
   const key=sid?"id:"+normalizeStyle(sid):"name:"+normalizeStyle(name);
-  if(!out.has(key))out.set(key,{id:sid,name,props:p.properties||def?.props||{},runOverrides:p.runOverrides||[],index:p.index,text:p.text});
+  if(!out.has(key))out.set(key,{id:sid,name,props:p.properties||def?.props||{},directParagraphProperties:p.directParagraphProperties||{},runOverrides:p.runOverrides||[],index:p.index,text:p.text});
  }
  return [...out.values()];
 }
@@ -209,10 +209,12 @@ function compareTemplateStyles(templateModel,manuscriptModel,templateName,manusc
    if(role)out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"样式格式无法量化对照："+t.name,text:"机器可读基准：模板样式“"+t.name+"”；当前 OOXML 未提供双方都可比较的格式值。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:"advisory",check:"templateStyleCompare",status:"review",detail:"模板与论文中虽找到相似样式，但没有双方均可读取的显式格式属性。",actualValue:"模板样式："+t.name+"；论文样式："+m.name+"；可比较的格式属性：0",evidence:"比较来源为两个 DOCX 的 styles.xml / 段落样式解析结果；局部直接格式与最终渲染未完整覆盖。",recommendation:"在 Word 中查看这两个样式的实际字体、字号、行距与缩进。",sourceIndex:t.index});
    continue;
   }
+  const directDiffs=diffs.filter(([k])=>(t.directParagraphProperties&&t.directParagraphProperties[k]!==undefined)||(m.directParagraphProperties&&m.directParagraphProperties[k]!==undefined));
+  const findingStatus=diffs.length?(directDiffs.length?"review":"fail"):"pass";
   const detail=diffs.length
-    ?"发现可量化的格式差异："+diffs.map(([k,label])=>label+"（模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)+"）").join("；")
+    ?(directDiffs.length?"发现段落样例的可量化格式差异，但至少一项来自段落级直接格式，样例差异可能与内容角色有关，暂列待核验：":"发现可量化的样式格式差异：")+diffs.map(([k,label])=>label+"（模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)+"）").join("；")
     :"在 "+shared.length+" 个可读取属性中未发现超出容差的差异。";
-  out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"模板样式对照："+t.name,text:"机器可读基准：模板 Word 样式“"+t.name+"”；对比论文样式“"+m.name+"”。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:diffs.length?"mandatory":"advisory",check:"templateStyleCompare",status:diffs.length?"fail":"pass",detail,actualValue:diffs.length?diffs.map(([k,label])=>label+": 模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)).join("；"):"未发现超容差差异（比较 "+shared.length+" 项）",evidence:"模板第 "+t.index+" 段使用样式“"+t.name+"”；论文第 "+m.index+" 段使用样式“"+m.name+"”。比较的可读取属性："+shared.map(([,label])=>label).join("、")+"。未完整覆盖所有 run 级直接格式和最终页面渲染。",recommendation:diffs.length?"已检测到明确的样式属性差异。按报告列出的模板值与论文实际值，选中对应段落/样式并逐项修正字体、字号、对齐、行距、段前后距、缩进或颜色；再重新检测。":"当前可读取的匹配样式属性未发现超出容差的差异。",sourceIndex:t.index});
+  out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"模板样式对照："+t.name,text:"机器可读基准：模板 Word 样式“"+t.name+"”；对比论文样式“"+m.name+"”。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:diffs.length&&!directDiffs.length?"mandatory":"advisory",check:"templateStyleCompare",status:findingStatus,detail,actualValue:diffs.length?diffs.map(([k,label])=>label+": 模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)).join("；"):"未发现超容差差异（比较 "+shared.length+" 项）",evidence:"模板第 "+t.index+" 段使用样式“"+t.name+"”；论文第 "+m.index+" 段使用样式“"+m.name+"”。比较的可读取属性："+shared.map(([,label])=>label).join("、")+"。"+(directDiffs.length?"其中涉及段落级直接格式覆盖，不能仅凭单个样例确定为样式定义违规。":"")+"未完整覆盖所有 run 级直接格式和最终页面渲染。",recommendation:diffs.length?(directDiffs.length?"核对报告列出的实际值与模板值，并检查该段是否因标题、摘要或特殊内容而使用了有意的直接格式；只有确认模板要求适用于该段后再修改。":"已检测到明确的样式属性差异。按报告列出的模板值与论文实际值，修正对应 Word 样式的字体、字号、对齐、行距、段前后距、缩进或颜色；再重新检测。"):"当前可读取的匹配样式属性未发现超出容差的差异。",sourceIndex:t.index});
  }
  return out;
 }
