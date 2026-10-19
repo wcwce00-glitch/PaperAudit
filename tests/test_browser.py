@@ -444,3 +444,34 @@ def test_explicit_template_text_removal_catches_paper_title_placeholder(page):
     rows=page.locator('.requirement-item').all_inner_texts()
     assert any('典型模板占位文字' in x and 'Paper Title*' in x for x in rows), rows
     assert any('有证据支持不符' in x and 'Remove all template text' in x for x in rows), rows
+
+
+def test_common_caption_placement_phrasings_are_recognized_but_not_auto_failed(page):
+    manuscript=make_paragraph_docx(['Figure 1. Caption.', 'Table 1. Caption.'])
+    guide=(
+        'Figure captions must be placed below the figure.\\n'
+        'Table titles should appear above each table.\\n'
+        '图题应置于图的下方。\\n'
+        '表格标题必须放在表格上方。'
+    ).encode('utf-8')
+    page.locator('#file-input').set_input_files({
+        'name':'caption-manuscript.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':manuscript
+    })
+    page.locator('#template-input').set_input_files({
+        'name':'caption-guide.txt',
+        'mimeType':'text/plain',
+        'buffer':guide
+    })
+    src=module_url('rules-engine.js')
+    actual=page.evaluate('''async src => {
+      const m=await import(src);
+      const a=await m.createRulesAudit(document.querySelector('#file-input').files[0], {
+        templateFile:document.querySelector('#template-input').files[0]
+      });
+      return a.requirements.map(x=>({text:x.originalText,check:x.check,status:x.status}));
+    }''',src)
+    assert sum(x['check']=='figurePlacement' for x in actual)==2, actual
+    assert sum(x['check']=='tablePlacement' for x in actual)==2, actual
+    assert all(x['status']=='review' for x in actual if x['check'] in ('figurePlacement','tablePlacement')), actual
