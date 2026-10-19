@@ -23,7 +23,7 @@ def module_url(relative,cache=None):
     cache[path]=out
     return out
 
-def fake_docx(strict=False,tabs=False,left_margin='1440',extra_section=False):
+def fake_docx(strict=False,tabs=False,left_margin='1440',extra_section=False,abstract=None,abstract_heading='Abstract'):
     ns='http://purl.oclc.org/ooxml/wordprocessingml/main' if strict else 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
     rel_ns='http://purl.oclc.org/ooxml/package/relationships' if strict else 'http://schemas.openxmlformats.org/package/2006/relationships'
     ct_ns='http://purl.oclc.org/ooxml/package/content-types' if strict else 'http://schemas.openxmlformats.org/package/2006/content-types'
@@ -36,6 +36,9 @@ def fake_docx(strict=False,tabs=False,left_margin='1440',extra_section=False):
         body=p('Do not use hard tabs.')+p('Number equations consecutively.')+p('Figure captions should be below figures.')
     else:
         body=p('Experimental results are shown in Fig. 1, Fig. 2 and Fig. 3 shows no special heading.')
+        if abstract is not None:
+            keywords = '关键词：这里有很多额外的关键词字数，不能被算入摘要。' if abstract_heading == '摘要' else 'Keywords: these extra words must not count'
+            body = p(abstract_heading) + p(abstract) + p(keywords) + p('Introduction') + body
         body+=p('The methods are described in references [1]–[4], [5], [6,7], [8]–[13].')
         body+=''.join(p(f'Synthetic figure caption {i}',sty='figurecaption') for i in range(1,6))
         body+=''.join(p(f'Synthetic table title {i}',sty='tablehead') for i in range(1,3))
@@ -235,3 +238,28 @@ def test_common_quantified_abstract_limit_wording_is_extracted_as_explicit_rule(
     # The synthetic manuscript has no reliably delimited abstract, so it must
     # remain review rather than inventing a pass/fail result.
     assert all(x["status"] == "review" for x in actual), actual
+
+
+def test_chinese_abstract_word_limit_stops_before_keywords_heading(local_page):
+    paper = fake_docx(abstract='甲乙丙丁戊己庚辛壬癸', abstract_heading='摘要')
+    local_page.locator('#paper').set_input_files({
+        'name': 'synthetic-cn-paper.docx',
+        'mimeType': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer': paper,
+    })
+    guide = '摘要最多10字。'.encode('utf-8')
+    local_page.locator('#template').set_input_files({
+        'name': 'abstract-limit.txt', 'mimeType': 'text/plain', 'buffer': guide,
+    })
+    src = module_url('rules-engine.js')
+    actual = local_page.evaluate("""async src => {
+      const m = await import(src);
+      const a = await m.createRulesAudit(document.querySelector('#paper').files[0], {
+        templateFile: document.querySelector('#template').files[0]
+      });
+      return a.requirements.filter(x => x.check === 'abstractLimit').map(x => ({
+        status: x.status, detail: x.detail
+      }));
+    }""", src)
+    assert actual and actual[0]['status'] == 'pass', actual
+    assert '10个汉字' in actual[0]['detail'], actual
