@@ -14,8 +14,8 @@ function classify(s){
  if(/(?:hard\s+tabs|手动制表符|制表位)/i.test(s))return {check:"tabs",params:{}};
  if(/(?:any\s+kind\s+of\s+pagination|(?:不得|禁止).{0,12}(?:页码|页码编号))/i.test(s))return {check:"pagination",params:{}};
  if(/(?:zero\s+before\s+decimal\s+points|小数点前(?:应|要|必须|加)零)/i.test(s))return {check:"decimalZero",params:{}};
- if(/(?:fig(?:ure)?\\.?\\s+captions?.{0,45}(?:below|under)|(?:图题|图片标题|插图标题).{0,20}(?:下方|下侧|下边))/i.test(s))return {check:"figurePlacement",params:{}};
- if(/(?:table\\s+(?:heads?|captions?|titles?)\\b.{0,45}(?:above|before)|(?:表题|表格标题|表头标题).{0,20}(?:上方|上侧|上边))/i.test(s))return {check:"tablePlacement",params:{}};
+ if(/(?:fig(?:ure)?\.?\s+captions?.{0,45}(?:below|under)|(?:图题|图片标题|插图标题).{0,20}(?:下方|下侧|下边))/i.test(s))return {check:"figurePlacement",params:{}};
+ if(/(?:table\s+(?:heads?|captions?|titles?)\b.{0,45}(?:above|before)|(?:表题|表格标题|表头标题).{0,20}(?:上方|上侧|上边))/i.test(s))return {check:"tablePlacement",params:{}};
  if(/(?:template\s+text\s+is\s+removed|remove\s+(?:all\s+)?template\s+text|删除.{0,15}(?:模板|占位)文字)/i.test(s))return {check:"placeholder",params:{}};
  if(/(?:A4\s+paper|A4\s+paper\s+size|A4\s+纸)/i.test(s))return {check:"a4",params:{}};
  if(/(?:number\s+equations\s+consecutively|公式.{0,10}连续编号)/i.test(s))return {check:"equationNumbers",params:{}};
