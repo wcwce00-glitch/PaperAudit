@@ -41,7 +41,8 @@ def fake_docx(strict=False,tabs=False,left_margin='1440',extra_section=False):
         body+=''.join(p(f'Synthetic table title {i}',sty='tablehead') for i in range(1,3))
         body+=p('References')+''.join(p(f'Author {i}. Synthetic reference title.',sty='references') for i in range(1,14))
         if tabs: body+=p('This manual hard tab should be checked',tab=True)
-    if extra_section: body+='<w:p><w:pPr><w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:bottom="1440" w:left="1440" w:right="1440"/><w:cols w:num="2" w:space="425"/></w:sectPr></w:pPr></w:p>'\n    doc=f'<?xml version="1.0" encoding="utf-8"?><w:document xmlns:w="{ns}"><w:body>{body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:bottom="1440" w:left="{left_margin}" w:right="1440"/><w:cols w:num="2" w:space="425"/></w:sectPr></w:body></w:document>'
+    if extra_section: body+='<w:p><w:pPr><w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:bottom="1440" w:left="1440" w:right="1440"/><w:cols w:num="2" w:space="425"/></w:sectPr></w:pPr></w:p>'
+    doc=f'<?xml version="1.0" encoding="utf-8"?><w:document xmlns:w="{ns}"><w:body>{body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:bottom="1440" w:left="{left_margin}" w:right="1440"/><w:cols w:num="2" w:space="425"/></w:sectPr></w:body></w:document>'
     styles=f'''<?xml version="1.0"?><w:styles xmlns:w="{ns}">
 <w:style w:type="paragraph" w:styleId="figurecaption"><w:name w:val="figure caption"/><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr></w:style>
 <w:style w:type="paragraph" w:styleId="tablehead"><w:name w:val="table head"/><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="6"/></w:numPr></w:pPr></w:style>
