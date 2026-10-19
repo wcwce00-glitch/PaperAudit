@@ -449,9 +449,9 @@ def test_explicit_template_text_removal_catches_paper_title_placeholder(page):
 def test_common_caption_placement_phrasings_are_recognized_but_not_auto_failed(page):
     manuscript=make_paragraph_docx(['Figure 1. Caption.', 'Table 1. Caption.'])
     guide=(
-        'Figure captions must be placed below the figure.\\n'
-        'Table titles should appear above each table.\\n'
-        '图题应置于图的下方。\\n'
+        'Figure captions must be placed below the figure.\n'
+        'Table titles should appear above each table.\n'
+        '图题应置于图的下方。\n'
         '表格标题必须放在表格上方。'
     ).encode('utf-8')
     page.locator('#file-input').set_input_files({
