@@ -215,7 +215,7 @@ def test_extra_section_is_not_alone_a_confirmed_format_error(local_page):
 
 def test_common_quantified_abstract_limit_wording_is_extracted_as_explicit_rule(local_page):
     loaded_files(local_page)
-    guide = "摘要最多200字。\n摘要控制在300字以内。\nAbstract should not exceed 250 words."
+    guide = "摘要最多200字。\\n摘要控制在300字以内。\\nAbstract should not exceed 250 words.\\n摘要限180字。\\nAbstract (max. 220 words)."
     local_page.locator("#template").set_input_files({
         "name": "abstract-limits.txt",
         "mimeType": "text/plain",
@@ -232,8 +232,8 @@ def test_common_quantified_abstract_limit_wording_is_extracted_as_explicit_rule(
         originalText: x.originalText, strength: x.strength, params: x.params, status: x.status
       }));
     }""", src)
-    assert len(actual) == 3, actual
-    assert [x["params"]["max"] for x in actual] == [200, 300, 250], actual
+    assert len(actual) == 5, actual
+    assert [x["params"]["max"] for x in actual] == [200, 300, 250, 180, 220], actual
     assert all(x["strength"] == "mandatory" for x in actual), actual
     # The synthetic manuscript has no reliably delimited abstract, so it must
     # remain review rather than inventing a pass/fail result.
