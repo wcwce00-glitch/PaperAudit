@@ -76,7 +76,8 @@ function checkRule(rule,manuscript,template){
    if(!Number.isFinite(a)||!Number.isFinite(t)){unknown.push("第 "+(i+1)+" 节 "+label);continue;}
    if(Math.abs(a-t)>tolerance)diffs.push("第 "+(i+1)+" 节 "+label+"（模板 "+t+"；论文 "+a+(key.endsWith("Twip")?" twips":"")+"）");
   }
-  if(diffs.length)return result("fail","已确认与上传模板存在可量化的页面版式差异："+diffs.join("；")+(sectionCountDiff?"；分节数不同（模板 "+expected.length+"；论文 "+actual.length+"），为避免把横向表格等合法分节错配，本次只对照了首节，其余分节需逐节核验。":""),"模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "), "请在 Word 的“布局/页面设置”中，按差异清单逐项修正纸张大小、页边距或分栏数；保存后重新检测。若分节数不同，请先逐节确认用途，不要仅为匹配分节数量而删除合法分节。");
+  if(diffs.length&&sectionCountDiff)return result("review","检测到可量化的页面参数差异："+diffs.join("；")+"；但分节数不同（模板 "+expected.length+"；论文 "+actual.length+"），无法可靠地按节对应，暂不将其判为确定违规。","模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "),"请在 Word 中逐节对照模板确认纸张大小、页边距和分栏；若确认某一对应分节违反模板，再修正该节。不要仅为匹配分节数量而删除合法分节。");
+  if(diffs.length)return result("fail","已确认与上传模板存在可量化的页面版式差异："+diffs.join("；"),"模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "), "请在 Word 的“布局/页面设置”中，按差异清单逐项修正纸张大小、页边距或分栏数；保存后重新检测。");
   if(unknown.length||sectionCountDiff)return result("review","已比较 "+count+" 对分节，未发现已读取参数的明确差异，但"+(sectionCountDiff?"分节数不同（模板 "+expected.length+"；论文 "+actual.length+"）；为避免错误配对，只自动对照首节，其余分节需要逐节核验。":"部分页面参数无法可靠读取")+"，不能仅凭这一点认定格式错误。","无法读取："+(unknown.length?unknown.join("、"):"无")+"；模板 "+expected.length+" 节，论文 "+actual.length+" 节。","检查额外分节的用途及无法读取的页面参数；只有确认违反适用模板要求时才标记为错误。");
   return result("pass","已比较 "+count+" 对分节的纸张尺寸、页边距和分栏；未发现超出容差的差异。","模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "),"当前可解析的页面参数与模板基本一致；仍需检查最终渲染和局部页面设置。");
  }
