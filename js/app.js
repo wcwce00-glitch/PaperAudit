@@ -24,7 +24,7 @@ function syncTemplateMode(){
   const state=document.querySelector('.work-state');
   if(state)state.textContent=withTemplate?'论文 + 已上传模板 → 模板驱动核查':'论文 → 通用预检（可上传模板切换模式）';
   const button=el('run-audit');
-  if(button&&!button.disabled)button.innerHTML=withTemplate?'按上传模板逐项检查 <span>↗</span>':'开始通用预检 <span>↗</span>';
+  if(button)button.innerHTML=withTemplate?'按上传模板逐项检查 <span>↗</span>':'开始通用预检 <span>↗</span>';
 }
 function checkSelection(candidate, others=files){
   if(candidate.size===0)return '不接受空文件';
@@ -77,7 +77,10 @@ function render(result){
   el('count-unverified').textContent=result.findings.filter(x=>x.level==='unverified').length;
   el('count-images').textContent=result.coverage.imagesChecked;
   const templateMode=!!result.template?.isUserTemplate || !!result.rulesAudit?.isUserTemplate;
-  el('coverage').textContent=`模式：${templateMode?'用户模板驱动核查':'通用预检规则包'} · 已扫描 ${result.coverage.filesScanned} 个文件 · 识别 ${result.coverage.paragraphs} 个段落 · 图题 ${result.coverage.figCaptions} · 表题 ${result.coverage.tableCaptions} · 可解析图片 ${result.coverage.imagesChecked}。${templateMode?`模板：${result.template?.name||result.rulesAudit?.name}（按用户提供材料作参照，未独立核实其官方权威性）；逐项核查 ${result.coverage.templateInstructions||0} 项。`:`未上传目标模板；使用通用预检规则包：${result.rulesAudit?.name||'所选规则'}。` }自动对照与无法可靠判断的项目会单独标注；仍需人工审阅。`;
+  const coverageDetail=templateMode
+    ?`模板：${result.template?.name||result.rulesAudit?.name}（按用户提供材料作参照，未独立核实其官方权威性）；逐项核查 ${result.coverage.templateInstructions||0} 条模板要求。`
+    :`未上传目标模板；使用通用预检规则包：${result.rulesAudit?.name||'所选规则'}；图题 ${result.coverage.figCaptions} · 表题 ${result.coverage.tableCaptions} · 可解析图片 ${result.coverage.imagesChecked}。`;
+  el('coverage').textContent=`模式：${templateMode?'用户模板驱动核查':'通用预检规则包'} · 已扫描 ${result.coverage.filesScanned} 个文件 · 识别 ${result.coverage.paragraphs} 个段落。 ${coverageDetail} 自动对照与无法可靠判断的项目会单独标注；仍需人工审阅。`;
   document.querySelectorAll('.filter').forEach(b=>{b.classList.toggle('active',b.dataset.filter==='all');});
   renderFindings(result,'all');
   renderRequirements(result.rulesAudit);
@@ -236,17 +239,23 @@ el('run-local-ai').addEventListener('click',async()=>{
 });
 el('run-audit').addEventListener('click',async()=>{
   if(!files.length)return;
-  const ppi=Number(el('ppi').value);
-  if(!Number.isFinite(ppi)||ppi<50||ppi>1200){el('status').textContent='请输入 50–1200 之间的 PPI 阈值';return;}
-  const button=el('run-audit');button.disabled=true;button.textContent='正在按模板提取并对照……';el('status').textContent='正在浏览器本地解析论文与模板；不会上传文件';
+  const ppi=300;
+  const button=el('run-audit');button.disabled=true;button.textContent=templateFile?'正在按上传模板逐项核查……':'正在运行通用预检……';el('status').textContent='正在浏览器本地解析论文与模板；不会上传文件';
   try {
     await new Promise(r=>setTimeout(r,30));
-    lastResult=await inspectFiles(files,{captions:el('check-captions').checked,citations:el('check-citations').checked,images:el('check-images').checked,ppi});
+    lastResult=await inspectFiles(files,{captions:!templateFile,citations:!templateFile,images:!templateFile,ppi});
     const docxFiles=files.filter(f=>/\.docx$/i.test(f.name));
     const failedFiles=new Set(lastResult.findings.filter(x=>x.code==='FILE-ERROR').map(x=>x.location));
     const validDocxFiles=docxFiles.filter(f=>!failedFiles.has(f.name));
-    const legacyCodes=new Set(['HEADING-GAP','CAP-DUPLICATE','CAP-GAP','REF-NOT-FOUND','CITE-SECTION-MISSING','CITE-NOT-FOUND','CITE-DUPLICATE','FIELDS-UNVERIFIED']);
-    lastResult.findings=lastResult.findings.filter(x=>!legacyCodes.has(x.code));
+    if(templateFile){
+      // In template-driven mode the generic preflight must not compete with the
+      // uploaded journal requirements. Preserve parsing/file errors, then add
+      // only template comparison and extracted-requirement findings below.
+      lastResult.findings=lastResult.findings.filter(x=>x.code==='FILE-ERROR');
+    }else{
+      const legacyCodes=new Set(['HEADING-GAP','CAP-DUPLICATE','CAP-GAP','REF-NOT-FOUND','CITE-SECTION-MISSING','CITE-NOT-FOUND','CITE-DUPLICATE','FIELDS-UNVERIFIED']);
+      lastResult.findings=lastResult.findings.filter(x=>!legacyCodes.has(x.code));
+    }
 
     let comparisonTemplate=null;
     if(templateFile){
