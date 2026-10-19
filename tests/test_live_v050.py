@@ -160,20 +160,20 @@ def test_official_public_template_detects_real_docx_page_margin_change(live_page
     assert original is not None, "Could not download a valid official public DOCX: " + " | ".join(errors)
 
     # Change the left margin in every section while retaining all other DOCX parts.
-    namespace = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
     entries = {}
     with zipfile.ZipFile(io.BytesIO(original)) as archive:
         entries = {item.filename: archive.read(item.filename) for item in archive.infolist()}
     root = ET.fromstring(entries["word/document.xml"])
     changed = 0
-    for node in root.iter(namespace + "pgMar"):
-        key = namespace + "left"
-        current = node.attrib.get(key)
+    for node in root.iter():
+        if node.tag.split("}")[-1] != "pgMar":
+            continue
+        key = next((k for k in node.attrib if k.split("}")[-1] == "left"), None)
+        current = node.attrib.get(key) if key else None
         if current is not None and current.isdigit():
             node.attrib[key] = str(int(current) + 360)  # six tenths of an inch
             changed += 1
     assert changed > 0, f"{source_label}: no numeric section left margin was found to mutate"
-    ET.register_namespace("w", namespace[1:-1])
     entries["word/document.xml"] = ET.tostring(root, encoding="utf-8", xml_declaration=True)
     mutated_path = tmp_path / "public-template-with-deliberate-margin-error.docx"
     with zipfile.ZipFile(mutated_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
