@@ -1,11 +1,16 @@
 /** Conservative, local-only template comparison. The uploaded document is NOT presumed to be official. */
 const NS='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+const NS_LIST=[NS,'http://purl.oclc.org/ooxml/wordprocessingml/main'];
 const LIMIT=30*1024*1024, ZIP_LIMIT=120*1024*1024, XML_LIMIT=20*1024*1024;
 const TERMS=/(?:必须|须|应当|不得|不超过|不少于|至少|至多|请(?:务必|按照|提供|注明)|必须包括|\bmust\b|\brequired\b|\bshould\b|\bno more than\b|\bat least\b|\bmaximum\b|\bminimum\b)/i;
 const SECTION_KEYS={abstract:/^(?:摘\s*要|abstract)(?:\s*[:：]|\s*$)/i,keywords:/^(?:关\s*键\s*词|key\s*words|keywords)(?:\s*[:：]|\s*$)/i,references:/^(?:参\s*考\s*文\s*献|references|bibliography)\s*$/i};
 const SECTION_LABELS={abstract:'摘要 / Abstract',keywords:'关键词 / Keywords',references:'参考文献 / References'};
-function nodes(el,tag){return [...el.getElementsByTagNameNS(NS,tag)];}
-function val(el,name){return el?.getAttributeNS(NS,name)||el?.getAttribute(`w:${name}`)||el?.getAttribute(name)||null;}
+function nodes(el,tag){return el?[...el.getElementsByTagNameNS('*',tag)].filter(n=>NS_LIST.includes(n.namespaceURI)):[];}
+function val(el,name){
+ if(!el)return null;
+ for(const a of [...el.attributes])if(a.localName===name&&(!a.namespaceURI||NS_LIST.includes(a.namespaceURI)))return a.value||null;
+ return el.getAttributeNS(NS,name)||el.getAttribute(`w:${name}`)||el.getAttribute(name)||null;
+}
 function xmlParse(str,filename){const doc=new DOMParser().parseFromString(str,'application/xml');if(doc.getElementsByTagName('parsererror').length)throw Error(`${filename} 无法解析 XML`);return doc;}
 async function openDocx(file){
   if(file.size>LIMIT)throw Error('模板或论文不能超过 30 MB');

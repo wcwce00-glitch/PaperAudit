@@ -8,7 +8,7 @@
 
 PaperAudit is a free, open-source, browser-based preflight assistant for Word research manuscripts. It helps catch common figure/table caption and cross-reference issues, basic bracket-numbered citations, supported embedded PNG/JPEG effective PPI, and selected template requirements. It exports standalone HTML or JSON reports.
 
-> **Release status:** The public website remains on the approved `main` build. The v0.5.0 Strict OOXML and source-traceable rules upgrade is under review in [PR #3](https://github.com/wcwce00-glitch/PaperAudit/pull/3) and is not released until that PR is reviewed and merged.
+> **Release status:** The v0.5.0 preview is live. When a target DOCX/DOTX template is uploaded, PaperAudit uses the readable template layout and paragraph styles as a comparison baseline and checks supported explicit requirements. Complex local overrides, final visual placement, and natural-language instructions without a reliable checker remain review-only; template extraction alone is not proof that every requirement passed.
 
 ## Why use it?
 
@@ -33,6 +33,8 @@ The app does not require an account or installation. For local development, run 
 - Normal audits run locally in the browser. Documents are not uploaded to a PaperAudit server.
 - Public CI uses synthetic test documents only. Never commit unpublished manuscripts, private templates, personal data, reports, or extracted text to a public issue, pull request, repository, or CI log.
 - The optional WebLLM/Qwen candidate-extraction path is **off by default and experimental**. When explicitly enabled, the browser downloads runtime/model assets from third-party hosts. Real inference has **not yet passed** the available hosted CI software-WebGPU smoke test. AI-extracted requirements remain suggestions for human review, not confirmed rules.
+
+Template comparison is deliberately evidence-bounded. It compares measurable page settings and matched paragraph-style properties, plus a small set of explicit machine-checkable instructions. It does **not** guarantee pixel-perfect reproduction of a Word template or full interpretation of every natural-language clause. Direct formatting, complex sections, floating objects, table internals, fields, and final visual placement may require manual review. A list of extracted instructions is not proof that every instruction was checked.
 
 ## What it can and cannot tell you
 

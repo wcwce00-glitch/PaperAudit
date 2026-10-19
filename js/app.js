@@ -14,6 +14,18 @@ for(const profile of PROFILES){const o=document.createElement('option');o.value=
 profileSelect.value='general-en';
 const MAX_FILES=10,MAX_TOTAL=80*1024*1024,MAX_SINGLE=30*1024*1024;
 function fileFingerprint(f){return `${f.name}/${f.size}/${f.lastModified||0}`;}
+function syncTemplateMode(){
+  const withTemplate=!!templateFile;
+  profileSelect.disabled=withTemplate;
+  const hint=el('profile-hint');
+  if(hint)hint.textContent=withTemplate
+    ?'模板驱动模式已启用：将以你上传的模板/指南为基准；通用规则包不会代替该模板。'
+    :'未上传模板时使用所选的通用预检规则包；它不代表任何特定期刊的官方要求。';
+  const state=document.querySelector('.work-state');
+  if(state)state.textContent=withTemplate?'论文 + 已上传模板 → 模板驱动核查':'论文 → 通用预检（可上传模板切换模式）';
+  const button=el('run-audit');
+  if(button&&!button.disabled)button.innerHTML=withTemplate?'按上传模板逐项检查 <span>↗</span>':'开始通用预检 <span>↗</span>';
+}
 function checkSelection(candidate, others=files){
   if(candidate.size===0)return '不接受空文件';
   if(candidate.size>MAX_SINGLE)return '单个文件不能超过 30 MB';
@@ -29,7 +41,8 @@ function refresh(){
   if(!files.length){const msg=document.createElement('div');msg.className='file-placeholder';msg.textContent='尚未选择文件。可以先试用下方的示例。';filesEl.append(msg);}
   files.forEach((f,i)=>{const row=document.createElement('div');row.className='file-chip';const icon=document.createElement('span');icon.textContent=/\.docx$/i.test(f.name)?'▣':'▧';const name=document.createElement('b');name.textContent=f.name;const small=document.createElement('small');small.textContent=sizeString(f.size);const remove=document.createElement('button');remove.textContent='移除';remove.type='button';remove.setAttribute('aria-label',`移除 ${f.name}`);remove.addEventListener('click',()=>{files.splice(i,1);refresh();});row.append(icon,name,small,remove);filesEl.append(row);});
   el('run-audit').disabled=!files.length;
-  el('status').textContent=files.length?`已选择 ${files.length} 个文件，点击“开始检查”`:'等待添加文件';
+  syncTemplateMode();
+  el('status').textContent=files.length?`已选择 ${files.length} 个文件，${templateFile?'点击“按上传模板逐项检查”':'点击“开始通用预检”'}`:'等待添加文件';
 }
 function receive(list){
   const incoming=[...list].filter(supported);
@@ -63,7 +76,8 @@ function render(result){
   el('count-warning').textContent=result.findings.filter(x=>x.level==='warning').length;
   el('count-unverified').textContent=result.findings.filter(x=>x.level==='unverified').length;
   el('count-images').textContent=result.coverage.imagesChecked;
-  el('coverage').textContent=`已扫描 ${result.coverage.filesScanned} 个文件 · 识别 ${result.coverage.paragraphs} 个段落 · 图题 ${result.coverage.figCaptions} · 表题 ${result.coverage.tableCaptions} · 可解析图片 ${result.coverage.imagesChecked}。${result.template?`模板：${result.template.name}（未核验权威性）；候选文字要求 ${result.coverage.templateInstructions||0} 条。`:'尚未上传期刊模板；本次是通用检查。'}检测为启发式规则，不能替代人工审阅。`;
+  const templateMode=!!result.template?.isUserTemplate || !!result.rulesAudit?.isUserTemplate;
+  el('coverage').textContent=`模式：${templateMode?'用户模板驱动核查':'通用预检规则包'} · 已扫描 ${result.coverage.filesScanned} 个文件 · 识别 ${result.coverage.paragraphs} 个段落 · 图题 ${result.coverage.figCaptions} · 表题 ${result.coverage.tableCaptions} · 可解析图片 ${result.coverage.imagesChecked}。${templateMode?`模板：${result.template?.name||result.rulesAudit?.name}（按用户提供材料作参照，未独立核实其官方权威性）；逐项核查 ${result.coverage.templateInstructions||0} 项。`:`未上传目标模板；使用通用预检规则包：${result.rulesAudit?.name||'所选规则'}。` }自动对照与无法可靠判断的项目会单独标注；仍需人工审阅。`;
   document.querySelectorAll('.filter').forEach(b=>{b.classList.toggle('active',b.dataset.filter==='all');});
   renderFindings(result,'all');
   renderRequirements(result.rulesAudit);
@@ -78,7 +92,7 @@ function renderRequirements(audit){
   for(const rule of audit.requirements){
     const item=document.createElement('article');item.className='requirement-item';
     const head=document.createElement('div');head.className='rq-head';
-    const title=document.createElement('h4');title.textContent=rule.id+' · '+rule.title;
+    const title=document.createElement('h4');title.textContent=(rule.checkedDocument?rule.checkedDocument+' · ':'')+rule.id+' · '+rule.title;
     const tag=document.createElement('span');tag.className='rq-pill '+rule.status;tag.textContent=rule.status==='pass'?'已核查 · 符合':rule.status==='fail'?'有证据支持不符':'待核验';
     head.append(title,tag);
     const original=document.createElement('p');original.textContent='规则原文：'+(rule.originalText||rule.text||'');
@@ -115,10 +129,11 @@ templateInput.addEventListener('change',()=>{
   if(!supportedTemplate(f)){el('template-info').textContent='格式不支持：请使用 DOCX、TXT 或 MD';return;}
   if(f.size===0 || f.size>MAX_SINGLE){el('template-info').textContent='模板必须非空且不超过 30 MB';return;}
   if(files.reduce((n,x)=>n+x.size,0)+f.size>MAX_TOTAL){el('template-info').textContent='论文/图片与模板总计不能超过 80 MB';return;}
-  templateFile=f;aiSuggestions=[];el('template-info').textContent=`已选择：${f.name}（仅在浏览器本地分析）`;
-  el('remove-template').hidden=false;el('save-local-template').disabled=false;
+  templateFile=f;aiSuggestions=[];el('template-info').textContent=`已选择：${f.name}（本次将以该文件为对照基准；只在浏览器本地解析）`;
+  el('remove-template').hidden=false;el('save-local-template').disabled=false;el('results').hidden=true;syncTemplateMode();
+  el('status').textContent=files.length?'模板已就绪：上传/保留需要检查的 DOCX 论文，然后点击“按上传模板逐项检查”。':'模板已就绪：还需要上传要核查的 DOCX 论文。';
 });
-el('remove-template').addEventListener('click',()=>{templateFile=null;el('template-info').textContent='未选择模板：仍可使用下方的官方投稿资源目录';el('remove-template').hidden=true;el('save-local-template').disabled=true;});
+el('remove-template').addEventListener('click',()=>{templateFile=null;aiSuggestions=[];el('template-info').textContent='未选择模板：仅运行通用预检规则；如果要按具体期刊检查，请重新上传该期刊模板或作者指南。';el('remove-template').hidden=true;el('save-local-template').disabled=true;el('results').hidden=true;syncTemplateMode();});
 function renderCatalog(){
   const entries=selectResources(el('discipline').value,el('journal-language').value);
   const container=el('journal-results');container.replaceChildren();
@@ -158,8 +173,8 @@ async function renderLocalLibrary(){
           const savedFile=new File([record.blob],record.filename,{type:record.mimeType});
           if(savedFile.size>MAX_SINGLE || files.reduce((n,x)=>n+x.size,0)+savedFile.size>MAX_TOTAL)throw Error('该模板超出本次文件大小限制');
           templateFile=savedFile;
-          el('template-info').textContent=`已从本地库选择：${record.filename}`;
-          el('remove-template').hidden=false;el('save-local-template').disabled=false;
+          el('template-info').textContent=`已从本地库选择：${record.filename}（本次检查将以此作为基准）`;
+          el('remove-template').hidden=false;el('save-local-template').disabled=false;el('results').hidden=true;syncTemplateMode();
           el('share-journal').value=record.journal;el('share-discipline').value=record.discipline;
           el('share-language').value=record.language;el('share-version').value=record.version;
           el('share-source').value=record.sourceUrl||'';
@@ -223,30 +238,62 @@ el('run-audit').addEventListener('click',async()=>{
   if(!files.length)return;
   const ppi=Number(el('ppi').value);
   if(!Number.isFinite(ppi)||ppi<50||ppi>1200){el('status').textContent='请输入 50–1200 之间的 PPI 阈值';return;}
-  const button=el('run-audit');button.disabled=true;button.textContent='正在检查，请稍候……';el('status').textContent='文件仅在浏览器本地处理';
-  try {await new Promise(r=>setTimeout(r,30));lastResult=await inspectFiles(files,{captions:el('check-captions').checked,citations:el('check-citations').checked,images:el('check-images').checked,ppi});
-    const docxFile=files.find(f=>/\.docx$/i.test(f.name));
-    const docxInspectionFailed=docxFile&&lastResult.findings.some(x=>x.code==='FILE-ERROR'&&x.location===docxFile.name);
-    if(docxFile&&!docxInspectionFailed){
-      // The semantic parser supplies authoritative *counts* from styles/numbering.xml.
-      // Suppress only legacy textual heuristics that conflict with that parsed model.
-      const legacyCodes=new Set(['HEADING-GAP','CAP-DUPLICATE','CAP-GAP','REF-NOT-FOUND','CITE-SECTION-MISSING','CITE-NOT-FOUND','CITE-DUPLICATE','FIELDS-UNVERIFIED']);
-      lastResult.findings=lastResult.findings.filter(x=>!legacyCodes.has(x.code));
-      try{
-        const audit=await createRulesAudit(docxFile,{templateFile,profileId:profileSelect.value,aiSuggestions});
-        lastResult.rulesAudit={name:audit.name,source:audit.source,requirements:audit.requirements,stats:audit.stats};
-        lastResult.coverage.templateInstructions=audit.stats.total;
-        lastResult.template={name:audit.name,kind:templateFile?'用户上传模板 / 指南':'内置通用规则包',verifiedOfficial:false,candidateInstructions:audit.requirements.map(x=>({location:x.source,text:x.originalText||x.text})),statement:audit.source};
-        // Only the conservative rules engine may issue a confirmed mismatch.
-        for(const rule of audit.requirements.filter(x=>x.status==='fail')){
-          lastResult.findings.push({level:'warning',code:'RULE-'+rule.id,title:'有证据支持不符：'+rule.title,location:rule.sourceFile||rule.source,detail:rule.actualValue||rule.detail,evidence:rule.evidence,advice:rule.recommendation||rule.action||'按原始要求人工核对并修改。'});
-        }
-      }catch(err){
-        lastResult.findings.push({level:'unverified',code:'RULES-ERROR',title:'逐项规则分析待核验',location:templateFile?templateFile.name:'内置预检',detail:String(err.message||err),advice:'基础检查结果仍有效；分析失败不代表论文违反任何规则。'});
-      }
+  const button=el('run-audit');button.disabled=true;button.textContent='正在按模板提取并对照……';el('status').textContent='正在浏览器本地解析论文与模板；不会上传文件';
+  try {
+    await new Promise(r=>setTimeout(r,30));
+    lastResult=await inspectFiles(files,{captions:el('check-captions').checked,citations:el('check-citations').checked,images:el('check-images').checked,ppi});
+    const docxFiles=files.filter(f=>/\.docx$/i.test(f.name));
+    const failedFiles=new Set(lastResult.findings.filter(x=>x.code==='FILE-ERROR').map(x=>x.location));
+    const validDocxFiles=docxFiles.filter(f=>!failedFiles.has(f.name));
+    const legacyCodes=new Set(['HEADING-GAP','CAP-DUPLICATE','CAP-GAP','REF-NOT-FOUND','CITE-SECTION-MISSING','CITE-NOT-FOUND','CITE-DUPLICATE','FIELDS-UNVERIFIED']);
+    lastResult.findings=lastResult.findings.filter(x=>!legacyCodes.has(x.code));
+
+    let comparisonTemplate=null;
+    if(templateFile){
+      const before=lastResult.findings.length;
+      await inspectTemplateAgainstManuscripts(templateFile,validDocxFiles,lastResult);
+      comparisonTemplate=lastResult.template||null;
+      // Requirement excerpts are already displayed with their original text/source in the
+      // per-rule panel. Keep the comparator's measured checks here without duplicating them.
+      const comparatorFindings=lastResult.findings.slice(before).filter(x=>!['TEMPLATE-INSTRUCTION','TEMPLATE-INSTRUCTION-MORE'].includes(x.code));
+      lastResult.findings=[...lastResult.findings.slice(0,before),...comparatorFindings];
     }
-    render(lastResult);el('status').textContent=`检查完成：${lastResult.findings.length} 个需关注或待确认事项`;}catch(err){el('status').textContent=`检查失败：${err.message}`;}
-  finally{button.disabled=false;button.innerHTML='再次检查 <span>↗</span>';}
+
+    if(validDocxFiles.length){
+      const audits=[];
+      for(const docxFile of validDocxFiles){
+        audits.push(await createRulesAudit(docxFile,{templateFile,profileId:profileSelect.value,aiSuggestions}));
+      }
+      const requirements=audits.flatMap((audit,index)=>audit.requirements.map(rule=>({...rule,checkedDocument:validDocxFiles[index].name})));
+      const pass=requirements.filter(x=>x.status==='pass').length;
+      const fail=requirements.filter(x=>x.status==='fail').length;
+      const review=requirements.filter(x=>x.status==='review').length;
+      lastResult.rulesAudit={name:audits[0].name,source:audits[0].source,requirements,stats:{total:requirements.length,pass,fail,review},isUserTemplate:!!templateFile,profileId:audits[0].profileId};
+      lastResult.coverage.templateInstructions=requirements.length;
+      lastResult.template={
+        ...(comparisonTemplate||{}),
+        name:audits[0].name,
+        kind:templateFile?'用户上传模板 / 指南':'内置通用规则包',
+        isUserTemplate:!!templateFile,
+        verifiedOfficial:false,
+        candidateInstructions:comparisonTemplate?.candidateInstructions||audits[0].requirements.filter(x=>x.sourceParagraph).map(x=>({location:x.source||x.sourceFile||'模板规则',text:x.originalText||x.text||''})),
+        statement:audits[0].source
+      };
+      for(const rule of requirements.filter(x=>x.status==='fail')){
+        lastResult.findings.push({level:'warning',code:'RULE-'+rule.id,title:'有证据支持不符：'+rule.title,location:`${rule.checkedDocument} · ${rule.sourceFile||rule.source||'模板规则'}`,detail:rule.actualValue||rule.detail,evidence:rule.evidence,advice:rule.recommendation||rule.action||'按模板原文核对并修改。'});
+      }
+    }else if(templateFile){
+      lastResult.template={...(comparisonTemplate||{}),name:templateFile.name,kind:'用户上传模板 / 指南',isUserTemplate:true,verifiedOfficial:false};
+    }
+    render(lastResult);
+    const mode=templateFile?'模板驱动检查':'通用预检';
+    el('status').textContent=`${mode}完成：${lastResult.findings.length} 项需关注或待确认事项；${lastResult.rulesAudit?.stats.total||0} 条逐项规则已列出`;
+  }catch(err){
+    el('status').textContent=`检查失败：${err.message||err}`;
+  }finally{
+    button.disabled=!files.length;
+    syncTemplateMode();
+  }
 });
 el('save-html').addEventListener('click',()=>{if(lastResult)exportFile(makeHTML(lastResult),'PaperAudit-report.html','text/html;charset=utf-8');});
 el('save-json').addEventListener('click',()=>{if(lastResult)exportFile(JSON.stringify(lastResult,null,2),'PaperAudit-report.json','application/json;charset=utf-8');});

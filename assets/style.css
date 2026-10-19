@@ -52,3 +52,14 @@
 .hero-action:focus-visible,.faq-item summary:focus-visible{outline:3px solid #7ab795;outline-offset:3px}
 @media(max-width:850px){.hero-actions{gap:8px;margin-top:21px}.hero-action{font-size:12px}.faq-grid{grid-template-columns:1fr}.faq{padding-bottom:60px}}
 @media(max-width:540px){.hero-actions{display:grid;grid-template-columns:1fr 1fr;align-items:stretch}.hero-action{padding:10px 8px;text-align:center}.hero-action-link{grid-column:1/-1;min-height:35px}.faq{padding:10px 0 48px}.faq h2{font-size:27px}.faq-item{padding-left:13px;padding-right:13px}}
+
+
+/* Template-driven audit action follows both upload steps */
+.audit-action{margin-top:18px;display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,.45fr);gap:20px;align-items:center;border-color:#bdd5c7;background:#fbfdfb}
+.audit-action-copy{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:4px 12px}
+.audit-action-copy .step{grid-row:span 2;align-self:start}
+.audit-action-copy h3{font-size:17px;margin:0}
+.audit-action-copy p{grid-column:2;margin:4px 0 0;max-width:750px;color:#667b70;font-size:12px;line-height:1.8}
+.audit-action-control .primary-btn{width:100%;min-height:45px}
+.audit-action-control .status{margin-bottom:0}
+@media(max-width:700px){.audit-action{grid-template-columns:1fr;gap:12px}.audit-action-copy{align-items:start}.audit-action-control .primary-btn{max-width:none}}
