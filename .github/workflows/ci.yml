@@ -44,6 +44,7 @@ jobs:
       - name: Run all browser tests including real ES Modules served over HTTP
         env:
           PAPERAUDIT_REQUIRE_HTTP_TESTS: "1"
+          PAPERAUDIT_PUBLIC_TEMPLATE_TESTS: "1"
         run: python -m pytest tests -q
 
       - name: Stage Pages deployment directory
