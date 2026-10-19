@@ -1,8 +1,8 @@
 /* Conservative template requirement inventory. Unknown never means violated. */
 import {parseDocxModel} from "./docx-model.js";
 import {getProfile} from "./standards.js";
-const INDICATORS=/(?:必须|应当|不得|不允许|禁止|至少|至多|不得超过|不超过|需(?:要)?|要求|宜|建议|避免|应|请|删除|\bremove\b|\bmust\b|\bshould\b|\bshall\b|\brequired\b|\bdo not\b|\bplease\b|\bavoid\b|\buse\b|\bkeep\b|\bdefine\b|\bplace\b|\bnumber\b|\bprovide\b|\bcapitalize\b|\bitalicize\b|\bspell out\b|\bdo not\b|\bno more than\b|\bat least\b|\bmaximum\b|\bminimum\b)/i;
-const STRICT=/(?:必须|应当|不得|不允许|禁止|须|请勿|删除|最多|至多|上限为|\bmust\b|\bshall\b|\bdo not\b|\bremove\b|\bno more than\b|\bat most\b|\bmaximum of\b|\b(?:must|shall|should|may) not exceed\b|\bat least\b)/i;
+const INDICATORS=/(?:必须|应当|不得|不允许|禁止|至少|至多|最多|控制在|上限为|不得超过|不超过|需(?:要)?|要求|宜|建议|避免|应|请|删除|\bremove\b|\bmust\b|\bshould\b|\bshall\b|\brequired\b|\bdo not\b|\bplease\b|\bavoid\b|\buse\b|\bkeep\b|\bdefine\b|\bplace\b|\bnumber\b|\bprovide\b|\bcapitalize\b|\bitalicize\b|\bspell out\b|\bdo not\b|\bno more than\b|\bat least\b|\bmaximum\b|\bminimum\b)/i;
+const STRICT=/(?:必须|应当|不得|不允许|禁止|须|请勿|删除|最多|至多|控制在|上限为|\bmust\b|\bshall\b|\bdo not\b|\bremove\b|\bno more than\b|\bat most\b|\bmaximum of\b|\b(?:must|shall|should|may) not exceed\b|\bat least\b)/i;
 function stable(s){return s.toLowerCase().replace(/\s+/g," ").trim();}
 function splitSentences(s){
  // Split at the sentence boundary itself. Avoid "\\s*" on a zero-width
