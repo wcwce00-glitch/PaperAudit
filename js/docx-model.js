@@ -22,6 +22,15 @@ function props(n){
 function numPr(n){const q=child(child(n,"pPr"),"numPr");return {numId:attr(child(q,"numId"),"val"),level:num(attr(child(q,"ilvl"),"val"))||0};}
 function readStyles(d){const map=new Map();for(const s of all(d,"style")){const id=attr(s,"styleId");if(id)map.set(id,{id,name:attr(child(s,"name"),"val")||id,basedOn:attr(child(s,"basedOn"),"val"),props:props(s),...numPr(s)});}const defs=all(d,"docDefaults")[0],rd=child(defs,"rPrDefault"),pd=child(defs,"pPrDefault");return {map,defaultStyle:props({children:[...(rd?[...rd.children]:[]),...(pd?[...pd.children]:[])]})};}
 function styleProps(id,styles){const out=Object.assign({},styles.defaultStyle),chain=[],seen=new Set();let cur=id,depth=0;while(cur&&styles.map.has(cur)&&depth++<12&&!seen.has(cur)){seen.add(cur);const s=styles.map.get(cur);chain.unshift(s);cur=s.basedOn;}for(const s of chain)for(const k in s.props)if(s.props[k]!==null&&s.props[k]!==undefined)out[k]=s.props[k];return out;}
+function paragraphProps(p,id,styles){
+ const out=styleProps(id,styles),direct=props(p);
+ // Paragraph-level direct formatting overrides inherited style values. Run-level
+ // character formatting is read separately from each run and must not be mixed
+ // into this paragraph-level comparison.
+ const keys=["alignment","lineTwip","lineRule","beforeTwip","afterTwip","firstLineTwip","leftTwip","rightTwip","hangingTwip","keepNext","keepLines","pageBreakBefore","outlineLevel"];
+ for(const k of keys)if(direct[k]!==null&&direct[k]!==undefined)out[k]=direct[k];
+ return out;
+}
 function readNumbering(d){const defs=new Map(),instances=new Map(),styleMap=new Map();for(const a of all(d,"abstractNum")){const id=attr(a,"abstractNumId"),levels=new Map();for(const l of all(a,"lvl")){const level=num(attr(l,"ilvl"))||0,e={level,fmt:attr(child(l,"numFmt"),"val"),pattern:attr(child(l,"lvlText"),"val"),start:num(attr(child(l,"start"),"val"))||1,styleId:attr(child(l,"pStyle"),"val")};levels.set(level,e);if(e.styleId)styleMap.set(e.styleId,{abstractId:id,level});}defs.set(id,levels);}for(const n of all(d,"num")){const id=attr(n,"numId"),base=attr(child(n,"abstractNumId"),"val"),overrides=new Map();for(const o of all(n,"lvlOverride")){const lv=num(attr(o,"ilvl")),st=num(attr(child(o,"startOverride"),"val"));if(lv!==null&&st!==null)overrides.set(lv,st);}instances.set(id,{base,overrides});}return {defs,instances,styleMap};}
 function roman(n){const parts=[[1000,"M"],[900,"CM"],[500,"D"],[400,"CD"],[100,"C"],[90,"XC"],[50,"L"],[40,"XL"],[10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"]];let s="";for(const pair of parts)while(n>=pair[0]){s+=pair[1];n-=pair[0];}return s;}
 function label(format,n,pattern){if(!pattern||!Number.isInteger(n)||!["decimal","upperRoman","lowerRoman","upperLetter","lowerLetter"].includes(format)||/%[2-9]/.test(pattern))return null;let v=format==="decimal"?String(n):format==="upperRoman"?roman(n):format==="lowerRoman"?roman(n).toLowerCase():String.fromCharCode((n-1)%26+(format==="upperLetter"?65:97));return pattern.replace(/%1/g,v);}
@@ -47,7 +56,7 @@ export async function parseDocxModel(file){
   const captionSuffix=figLiteral?figLiteral[2].toLowerCase():"";
   const runKeys=["font","fontHAnsi","fontEast","fontCs","fontSizePt","color","underline","bold","italic","smallCaps","allCaps","strike"];
   const runs=all(p,"r").map(props).filter(x=>runKeys.some(k=>x[k]!==null&&x[k]!==undefined));
-  paragraphs.push({index:i+1,text,styleId:sid||"",styleName:sty?sty.name:"",category:cat,label:nlabel,number:numbered,format:fmt,numId:ni.numId||null,level:ni.level,captionKind,captionNumber:captionKind==="figure"||captionKind==="table"?(numbered===null?literalCaption:numbered):null,captionSuffix,properties:styleProps(sid,styles),runOverrides:runs,hasTabs:all(p,"tab").length>0,hasManualBreak:all(p,"br").some(x=>attr(x,"type")==="page"),hasSection:!!child(child(p,"pPr"),"sectPr")});
+  paragraphs.push({index:i+1,text,styleId:sid||"",styleName:sty?sty.name:"",category:cat,label:nlabel,number:numbered,format:fmt,numId:ni.numId||null,level:ni.level,captionKind,captionNumber:captionKind==="figure"||captionKind==="table"?(numbered===null?literalCaption:numbered):null,captionSuffix,properties:paragraphProps(p,sid,styles),runOverrides:runs,hasTabs:all(p,"tab").length>0,hasManualBreak:all(p,"br").some(x=>attr(x,"type")==="page"),hasSection:!!child(child(p,"pPr"),"sectPr")});
  }
  return {filename:file.name,namespace:doc.documentElement.namespaceURI,paragraphs,sections:sectionData(doc),tables:all(body,"tbl").length,drawings:all(body,"drawing").length,hasNumberingXml:!!nd,styleDefinitions:[...styles.map.values()].map(s=>({id:s.id,name:s.name,props:styleProps(s.id,styles)})),sourceFile:file};
 }
