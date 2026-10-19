@@ -21,10 +21,10 @@ PaperAudit is a free, open-source, browser-based preflight assistant for Word re
 ## Try it
 
 1. Open the [hosted app](https://wcwce00-glitch.github.io/PaperAudit/).
-2. Choose **Use sample manuscript** to try the synthetic example, or select a DOCX you are allowed to process.
-3. Optionally add a DOCX/DOTX template or a TXT/MD version of author instructions.
-4. Select the checks and set an image-PPI threshold appropriate to your target venue.
-5. Review the findings and download an HTML or JSON report.
+2. Select a DOCX manuscript you are allowed to process (or use the synthetic sample).
+3. Upload the target journal's DOCX/DOTX template or TXT/MD author instructions. This is the primary basis for a template-driven audit.
+4. Review the template requirements first; generic caption, citation, and image-PPI checks appear afterward as supplementary findings.
+5. Download the HTML or JSON report. Without a template, the app can only run its generic preflight profile.
 
 The app does not require an account or installation. For local development, run `python -m http.server 8000` from the repository root and open `http://localhost:8000/`; browsers may block ES modules when opening the page directly from `file://`.
 
@@ -40,7 +40,7 @@ Template comparison is deliberately evidence-bounded. It compares measurable pag
 
 PaperAudit is a preflight assistant, **not** a journal-compliance certification, plagiarism detector, scientific reviewer, or guarantee of acceptance. A clean report only means enabled checks did not identify a supported issue.
 
-Known limitations include complex Word SEQ/REF fields and automatic numbering, chapter-specific caption schemes, all citation styles, vector or linked artwork, equations, PDF/LaTeX sources, visual figure placement, and every local-format override. Effective PPI can be calculated only when a supported embedded raster image and its Word display dimensions can be resolved. A 300-PPI threshold is an editable example, not a universal journal requirement. Always follow the target venue's latest official author instructions.
+Known limitations include complex Word SEQ/REF fields and automatic numbering, chapter-specific caption schemes, all citation styles, vector or linked artwork, equations, PDF/LaTeX sources, visual figure placement, and every local-format override. Effective PPI can be calculated only when a supported embedded raster image and its Word display dimensions can be resolved. The supplementary raster-image check currently uses a 300-PPI example threshold; it is not a universal journal requirement and does not override a target template's explicit requirements. Always follow the target venue's latest official author instructions.
 
 Uploaded templates are not automatically authenticated as official or current. Natural-language requirements may be extracted as candidates but still need a human to check wording and applicability. The fictional `examples/DEMO_NOT_OFFICIAL_template.docx` is for testing only and must not be used for a real submission.
 
