@@ -243,7 +243,7 @@ el('run-audit').addEventListener('click',async()=>{
   const button=el('run-audit');button.disabled=true;button.textContent=templateFile?'正在按上传模板逐项核查……':'正在运行通用预检……';el('status').textContent='正在浏览器本地解析论文与模板；不会上传文件';
   try {
     await new Promise(r=>setTimeout(r,30));
-    lastResult=await inspectFiles(files,{captions:!templateFile,citations:!templateFile,images:!templateFile,ppi});
+    lastResult=await inspectFiles(files,{captions:true,citations:true,images:true,ppi});
     const docxFiles=files.filter(f=>/\.docx$/i.test(f.name));
     const failedFiles=new Set(lastResult.findings.filter(x=>x.code==='FILE-ERROR').map(x=>x.location));
     const validDocxFiles=docxFiles.filter(f=>!failedFiles.has(f.name));
