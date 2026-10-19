@@ -118,15 +118,17 @@ def test_strict_ooxml_template_and_rule_inventory(local_page):
     assert all(('模板第' in s or 'styles.xml' in s or 'sectPr' in s) for s in actual['sources'])
     assert all('text' in row and 'source' in row and row['status'] in ('pass','fail','review') for row in actual['requirements'])
 
-def test_unreliable_requirements_are_review_not_false_violation(local_page):
+def test_explicit_hard_tab_prohibition_is_actionable_failure(local_page):
     loaded_files(local_page,paper=fake_docx(tabs=True))
     src=module_url('rules-engine.js')
     actual=local_page.evaluate('''async src => {
       const m=await import(src);
       const a=await m.createRulesAudit(document.querySelector('#paper').files[0],{templateFile:document.querySelector('#template').files[0]});
-      return a.requirements.filter(x=>x.check==='tabs').map(x=>x.status);
+      return a.requirements.filter(x=>x.check==='tabs').map(x=>({status:x.status,detail:x.detail,recommendation:x.recommendation}));
     }''',src)
-    assert actual==['review']
+    assert actual and actual[0]['status']=='fail'
+    assert '段落' in actual[0]['detail']
+    assert '删除这些段落中的手动 Tab' in actual[0]['recommendation']
 
 def test_builtin_profile_works_without_template(local_page):
     loaded_files(local_page)
