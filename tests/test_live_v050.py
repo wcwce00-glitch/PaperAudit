@@ -171,7 +171,7 @@ def test_official_public_template_detects_real_docx_page_margin_change(live_page
         key = next((k for k in node.attrib if k.split("}")[-1] == "left"), None)
         current = node.attrib.get(key) if key else None
         if current is not None and current.isdigit():
-            node.attrib[key] = str(int(current) + 360)  # six tenths of an inch
+            node.attrib[key] = str(int(current) + 360)  # a quarter inch
             changed += 1
     assert changed > 0, f"{source_label}: no numeric section left margin was found to mutate"
     entries["word/document.xml"] = ET.tostring(root, encoding="utf-8", xml_declaration=True)
