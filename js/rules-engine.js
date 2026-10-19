@@ -72,9 +72,9 @@ function checkRule(rule,manuscript,template){
    if(!Number.isFinite(a)||!Number.isFinite(t)){unknown.push("第 "+(i+1)+" 节 "+label);continue;}
    if(Math.abs(a-t)>tolerance)diffs.push("第 "+(i+1)+" 节 "+label+"（模板 "+t+"；论文 "+a+(key.endsWith("Twip")?" twips":"")+"）");
   }
-  if(actual.length!==expected.length)diffs.push("分节数不同（模板 "+expected.length+"；论文 "+actual.length+"）");
-  if(diffs.length)return result("fail","已确认与上传模板存在页面版式差异："+diffs.join("；"),"模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "), "请按差异清单修正 Word 页面设置：逐节核对纸张尺寸、上/下/左/右页边距及分栏数；若某节确实需要特殊设置，可保留并在报告中排除该节。");
-  if(unknown.length)return result("review","已比较 "+count+" 对分节，但部分页面参数无法可靠读取。","无法读取："+unknown.join("、")+"；模板 "+expected.length+" 节，论文 "+actual.length+" 节。","在 Word 中逐节检查页面设置。");
+  const sectionCountDiff=actual.length!==expected.length;
+  if(diffs.length)return result("fail","已确认与上传模板存在可量化的页面版式差异："+diffs.join("；")+(sectionCountDiff?"；此外分节数不同（模板 "+expected.length+"；论文 "+actual.length+"），未一概判定多出的分节违规。":""),"模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "), "请按差异清单修正明确不一致的页面设置；若存在额外分节，请逐节确认其用途后再决定是否调整。");
+  if(unknown.length||sectionCountDiff)return result("review","已比较 "+count+" 对分节，未发现已读取参数的明确差异，但"+(sectionCountDiff?"分节数不同（模板 "+expected.length+"；论文 "+actual.length+"）":"部分页面参数无法可靠读取")+"，不能仅凭这一点认定格式错误。","无法读取："+(unknown.length?unknown.join("、"):"无")+"；模板 "+expected.length+" 节，论文 "+actual.length+" 节。","检查额外分节的用途及无法读取的页面参数；只有确认违反适用模板要求时才标记为错误。");
   return result("pass","已比较 "+count+" 对分节的纸张尺寸、页边距和分栏；未发现超出容差的差异。","模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "),"当前可解析的页面参数与模板基本一致；仍需检查最终渲染和局部页面设置。");
  }
  if(check==="images")return result("review","图片 PPI 由基础检查器单独核对；矢量图和图中标签仍需人工验证。","DOCX 图像对象","核对图像清晰度和最终排版大小。");
