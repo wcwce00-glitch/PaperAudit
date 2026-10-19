@@ -2,7 +2,7 @@
 import {parseDocxModel} from "./docx-model.js";
 import {getProfile} from "./standards.js";
 const INDICATORS=/(?:必须|应当|不得|不允许|禁止|至少|至多|不得超过|不超过|需(?:要)?|要求|宜|建议|避免|应|请|删除|\bremove\b|\bmust\b|\bshould\b|\bshall\b|\brequired\b|\bdo not\b|\bplease\b|\bavoid\b|\buse\b|\bkeep\b|\bdefine\b|\bplace\b|\bnumber\b|\bprovide\b|\bcapitalize\b|\bitalicize\b|\bspell out\b|\bdo not\b|\bno more than\b|\bat least\b|\bmaximum\b|\bminimum\b)/i;
-const STRICT=/(?:必须|应当|不得|不允许|禁止|须|请勿|删除|\bmust\b|\bshall\b|\bdo not\b|\bremove\b|\bno more than\b|\bat least\b)/i;
+const STRICT=/(?:必须|应当|不得|不允许|禁止|须|请勿|删除|最多|至多|上限为|\bmust\b|\bshall\b|\bdo not\b|\bremove\b|\bno more than\b|\bat most\b|\bmaximum of\b|\b(?:must|shall|should|may) not exceed\b|\bat least\b)/i;
 function stable(s){return s.toLowerCase().replace(/\s+/g," ").trim();}
 function splitSentences(s){
  // Split at the sentence boundary itself. Avoid "\\s*" on a zero-width
@@ -19,8 +19,8 @@ function classify(s){
  if(/(?:template\s+text\s+is\s+removed|remove\s+(?:all\s+)?template\s+text|删除.{0,15}(?:模板|占位)文字)/i.test(s))return {check:"placeholder",params:{}};
  if(/(?:A4\s+paper|A4\s+paper\s+size|A4\s+纸)/i.test(s))return {check:"a4",params:{}};
  if(/(?:number\s+equations\s+consecutively|公式.{0,10}连续编号)/i.test(s))return {check:"equationNumbers",params:{}};
- const zh=/(?:摘要|Abstract).{0,40}?(?:不得超过|不超过|最多|至多)\s*(\d{2,4})\s*(字|词)/i.exec(s);
- const en=/\babstract\b.{0,60}?(?:no\s+more\s+than|at\s+most|maximum\s+of|must\s+not\s+exceed)\s*(\d{2,4})\s*words/i.exec(s);
+ const zh=/(?:摘要|Abstract).{0,40}?(?:不得超过|不超过|最多|至多|上限为|控制在)\s*(\d{2,4})\s*(字|词)(?:以内)?/i.exec(s);
+ const en=/\babstract\b.{0,60}?(?:no\s+more\s+than|at\s+most|maximum\s+of|(?:must|shall|should|may)\s+not\s+exceed|not\s+exceed|up\s+to|within)\s*(\d{2,4})\s*words/i.exec(s);
  if(zh)return {check:"abstractLimit",params:{max:+zh[1],language:zh[2]==="词"?"en":"zh"}};
  if(en)return {check:"abstractLimit",params:{max:+en[1],language:"en"}};
  return {check:"manual",params:{}};
