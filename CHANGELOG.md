@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — Template-first audit UI
+- Remove the supplemental checkbox / custom image-PPI panel from the main workflow.
+- Make uploaded journal templates the controlling source for the primary report; run generic preflight only when no template is supplied.
+- Keep unsupported or ambiguous template clauses marked for human review rather than assuming they passed.
+
+
 ## v0.5.0-preview — Strict OOXML semantics and traceable requirements (published 2026-10-18)
 - Read Word styles and automatic numbering definitions from DOCX, including Transitional and Strict WordprocessingML namespaces.
 - Prefer semantic numbering over visible-text-only heuristics for figure captions, table captions and bracket-numbered references; downgrade uncertain cases to review instead of confirmed violations.
