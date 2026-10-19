@@ -90,13 +90,10 @@ def test_sample_flags_image_quality_and_keeps_uncertain_references_review_only(p
     assert info.value.suggested_filename == 'PaperAudit-report.html'
 
 
-def test_disable_checks_changes_results(page):
-    page.locator('#file-input').set_input_files(str(ROOT / 'examples/sample_manuscript.docx'))
-    page.locator('#check-captions').uncheck()
-    page.locator('#check-citations').uncheck()
-    found = run_check(page)
-    assert len(found) == 1
-    assert '有效分辨率不足' in found[0]
+def test_supplemental_checks_panel_removed(page):
+    assert page.locator('.config-panel').count() == 0
+    for selector in ['#check-captions', '#check-citations', '#check-images', '#ppi']:
+        assert page.locator(selector).count() == 0
 
 
 def test_standalone_image_ppi_requires_display_width(page):
@@ -176,7 +173,6 @@ def test_valid_reference_and_subfigures_are_not_flagged(page):
         '参考文献',
         '[1] Synthetic paper.',
     ])
-    page.locator('#check-images').uncheck()
     page.locator('#file-input').set_input_files({
         'name':'positive.docx',
         'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -186,11 +182,19 @@ def test_valid_reference_and_subfigures_are_not_flagged(page):
     assert found == [], found
 
 
-def test_higher_user_ppi_threshold_changes_detection(page):
+def test_template_rules_take_priority_over_generic_preflight_findings(page):
     page.locator('#file-input').set_input_files(str(ROOT / 'examples/sample_manuscript.docx'))
-    page.locator('#ppi').fill('100')
+    page.locator('#template-input').set_input_files({
+        'name': 'journal-guide.txt',
+        'mimeType': 'text/plain',
+        'buffer': b'The abstract must not exceed 150 words.',
+    })
     found = run_check(page)
     assert not any('有效分辨率不足' in x for x in found), found
+    assert 'journal-guide.txt' in page.locator('#coverage').inner_text()
+    assert '模板驱动核查' in page.locator('#coverage').inner_text()
+    assert page.locator('.requirement-item').count() >= 1
+    assert 'journal-guide.txt' in page.locator('#requirements-summary').inner_text()
 
 
 def make_template_docx(note='本刊稿件必须包含摘要。', width='11906', margin='1440'):
