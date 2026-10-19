@@ -253,21 +253,24 @@ def test_uploaded_template_page_size_mismatch(page):
     page.locator('#template-input').set_input_files({'name':'sizing.docx','mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','buffer':template})
     run_check(page)
     rows=page.locator('.requirement-item').all_inner_texts()
-    assert any('末节页面参数可能不同' in x for x in rows), rows
-    assert not any('有证据支持不符：对照模板页面' in x for x in page.locator('.finding-title').all_inner_texts())
+    assert any('已确认与上传模板存在可量化的页面版式差异' in x for x in rows), rows
+    assert any('S-paper' in x and '有证据支持不符' in x for x in rows), rows
     with page.expect_download() as info:page.locator('#save-json').click()
     import json
     result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
     assert any(x['code']=='TEMPLATE-PAGE' and '不同' in x['title'] for x in result['findings']), result['findings']
     page_reqs=[x for x in result['rulesAudit']['requirements'] if x['id']=='S-paper']
-    assert page_reqs and page_reqs[0]['status']=='review', page_reqs
+    assert page_reqs and page_reqs[0]['status']=='fail', page_reqs
     assert '模板 14000' in page_reqs[0]['actualValue'] or '纸张宽度' in page_reqs[0]['actualValue']
 
 
 
-def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', margin='1440', alignment='left', line='240', direct_bold_first=False):
+def make_styled_docx(lines, font='Times New Roman', size='20', width='11906', margin='1440', alignment='left', line='240', direct_bold_first=False, direct_alignment_first=None):
     paragraphs = ''.join(
-        '<w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r>'
+        '<w:p><w:pPr><w:pStyle w:val="Normal"/>'
+        + (f'<w:jc w:val="{escape(direct_alignment_first)}"/>' if direct_alignment_first and i == 0 else '')
+        + '</w:pPr>'
+        + '<w:r>'
         + ('<w:rPr><w:b w:val="1"/></w:rPr>' if direct_bold_first and i == 0 else '')
         + '<w:t>' + escape(t) + '</w:t></w:r></w:p>'
         for i, t in enumerate(lines)
@@ -337,6 +340,25 @@ def test_uploaded_template_drives_style_and_abstract_comparison(page):
     assert any(x['status']=='fail' and 'abstract' in x['title'].lower() for x in audit_rules), audit_rules
 
 
+def test_direct_paragraph_alignment_overrides_are_compared(page):
+    template=make_styled_docx(['Abstract','Template body'], alignment='left')
+    manuscript=make_styled_docx(['Abstract','Manuscript body'], alignment='left', direct_alignment_first='center')
+    page.locator('#file-input').set_input_files({
+        'name':'direct-format-manuscript.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':manuscript
+    })
+    page.locator('#template-input').set_input_files({
+        'name':'direct-format-template.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':template
+    })
+    run_check(page)
+    rows=page.locator('.requirement-item').all_inner_texts()
+    assert any('段落对齐' in x and '左对齐' in x and '居中' in x for x in rows), rows
+    assert any('待核验' in x for x in rows), rows
+
+
 def test_rule_panel_identifies_each_checked_manuscript(page):
     template=make_template_docx(note='This paper must include an abstract.')
     for name in ['first.docx','second.docx']:
@@ -395,3 +417,59 @@ def test_template_is_removable_and_does_not_leak_into_next_audit(page):
     page.locator('#remove-template').click()
     found=run_check(page)
     assert not any('模板' in x for x in found), found
+
+
+def test_explicit_template_text_removal_catches_paper_title_placeholder(page):
+    template=make_styled_docx([
+        'Remove all template text before submission.',
+        'Abstract',
+        'A short abstract.'
+    ])
+    manuscript=make_styled_docx([
+        'Paper Title*',
+        'Abstract',
+        'A short abstract.'
+    ])
+    page.locator('#file-input').set_input_files({
+        'name':'placeholder-manuscript.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':manuscript
+    })
+    page.locator('#template-input').set_input_files({
+        'name':'placeholder-template.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':template
+    })
+    run_check(page)
+    rows=page.locator('.requirement-item').all_inner_texts()
+    assert any('典型模板占位文字' in x and 'Paper Title*' in x for x in rows), rows
+    assert any('有证据支持不符' in x and 'Remove all template text' in x for x in rows), rows
+
+
+def test_common_caption_placement_phrasings_are_recognized_but_not_auto_failed(page):
+    manuscript=make_paragraph_docx(['Figure 1. Caption.', 'Table 1. Caption.'])
+    guide=(
+        'Figure captions must be placed below the figure.\n'
+        'Table titles should appear above each table.\n'
+        '图题应置于图的下方。\n'
+        '表格标题必须放在表格上方。'
+    ).encode('utf-8')
+    page.locator('#file-input').set_input_files({
+        'name':'caption-manuscript.docx',
+        'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer':manuscript
+    })
+    page.locator('#template-input').set_input_files({
+        'name':'caption-guide.txt',
+        'mimeType':'text/plain',
+        'buffer':guide
+    })
+    run_check(page)
+    import json
+    with page.expect_download() as info:
+        page.locator('#save-json').click()
+    result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
+    actual=result['rulesAudit']['requirements']
+    assert sum(x.get('check')=='figurePlacement' for x in actual)==2, actual
+    assert sum(x.get('check')=='tablePlacement' for x in actual)==2, actual
+    assert all(x['status']=='review' for x in actual if x.get('check') in ('figurePlacement','tablePlacement')), actual

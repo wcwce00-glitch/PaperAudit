@@ -1,8 +1,8 @@
 /* Conservative template requirement inventory. Unknown never means violated. */
 import {parseDocxModel} from "./docx-model.js";
 import {getProfile} from "./standards.js";
-const INDICATORS=/(?:必须|应当|不得|不允许|禁止|至少|至多|不得超过|不超过|需(?:要)?|要求|宜|建议|避免|应|请|\bmust\b|\bshould\b|\bshall\b|\brequired\b|\bdo not\b|\bplease\b|\bavoid\b|\buse\b|\bkeep\b|\bdefine\b|\bplace\b|\bnumber\b|\bprovide\b|\bcapitalize\b|\bitalicize\b|\bspell out\b|\bdo not\b|\bno more than\b|\bat least\b|\bmaximum\b|\bminimum\b)/i;
-const STRICT=/(?:必须|应当|不得|不允许|禁止|须|请勿|\bmust\b|\bshall\b|\bdo not\b|\bno more than\b|\bat least\b)/i;
+const INDICATORS=/(?:必须|应当|不得|不允许|禁止|至少|至多|不得超过|不超过|需(?:要)?|要求|宜|建议|避免|应|请|删除|\bremove\b|\bmust\b|\bshould\b|\bshall\b|\brequired\b|\bdo not\b|\bplease\b|\bavoid\b|\buse\b|\bkeep\b|\bdefine\b|\bplace\b|\bnumber\b|\bprovide\b|\bcapitalize\b|\bitalicize\b|\bspell out\b|\bdo not\b|\bno more than\b|\bat least\b|\bmaximum\b|\bminimum\b)/i;
+const STRICT=/(?:必须|应当|不得|不允许|禁止|须|请勿|删除|\bmust\b|\bshall\b|\bdo not\b|\bremove\b|\bno more than\b|\bat least\b)/i;
 function stable(s){return s.toLowerCase().replace(/\s+/g," ").trim();}
 function splitSentences(s){
  // Split at the sentence boundary itself. Avoid "\\s*" on a zero-width
@@ -14,8 +14,8 @@ function classify(s){
  if(/(?:hard\s+tabs|手动制表符|制表位)/i.test(s))return {check:"tabs",params:{}};
  if(/(?:any\s+kind\s+of\s+pagination|(?:不得|禁止).{0,12}(?:页码|页码编号))/i.test(s))return {check:"pagination",params:{}};
  if(/(?:zero\s+before\s+decimal\s+points|小数点前(?:应|要|必须|加)零)/i.test(s))return {check:"decimalZero",params:{}};
- if(/(?:fig(?:ure)?\s+captions?\s+should\s+be\s+below|图题.{0,12}(?:下方|下侧))/i.test(s))return {check:"figurePlacement",params:{}};
- if(/(?:table\s+(?:heads?|captions?)\s+should\s+(?:appear|be)\s+above|表题.{0,12}(?:上方|上侧))/i.test(s))return {check:"tablePlacement",params:{}};
+ if(/(?:fig(?:ure)?\.?\s+captions?.{0,45}(?:below|under)|(?:图题|图片标题|插图标题).{0,20}(?:下方|下侧|下边))/i.test(s))return {check:"figurePlacement",params:{}};
+ if(/(?:table\s+(?:heads?|captions?|titles?)\b.{0,45}(?:above|before)|(?:表题|表格标题|表头标题).{0,20}(?:上方|上侧|上边))/i.test(s))return {check:"tablePlacement",params:{}};
  if(/(?:template\s+text\s+is\s+removed|remove\s+(?:all\s+)?template\s+text|删除.{0,15}(?:模板|占位)文字)/i.test(s))return {check:"placeholder",params:{}};
  if(/(?:A4\s+paper|A4\s+paper\s+size|A4\s+纸)/i.test(s))return {check:"a4",params:{}};
  if(/(?:number\s+equations\s+consecutively|公式.{0,10}连续编号)/i.test(s))return {check:"equationNumbers",params:{}};
@@ -32,8 +32,8 @@ function result(status,detail,evidence,action){return {status,detail,actualValue
 function plainParagraphs(m){return m.paragraphs.filter(p=>p.text);}
 function checkRule(rule,manuscript,template){
  const paras=plainParagraphs(manuscript),check=rule.check||"manual",reliable=rule.strength==="mandatory"&&!!(template&&template.isUserTemplate);
- if(check==="tabs"){const allowed=paras.filter(p=>p.hasTabs&&/(?:equation|formula|公式)/i.test(p.styleId+" "+p.styleName)),found=paras.filter(p=>p.hasTabs&&!allowed.includes(p));return found.length?result("review","检测到 "+found.length+" 处非公式段落 Tab。Tab 可能是合法版式控制，需确认是否违规。",found.slice(0,6).map(p=>"段落 "+p.index).join("、"),"人工确认是否违反禁止硬制表符的原文要求。"):result("pass","未检测到非公式段落 Tab。","Word 段落结构；公式编号定位可能合理使用 Tab","无需因本项单独修改，仍请人工检查公式排版。");}
- if(check==="placeholder"){const patterns=[/XXX-X-XXXX-XXXX-X/i,/©20XX IEEE/i,/\bPaper Title\*\b/i,/Sample of a Table footnote/i,/Insert paper title/i,/填入(?:论文|标题|作者)/],found=paras.filter(p=>patterns.some(re=>re.test(p.text)));return found.length?result(reliable?"fail":"review","识别到 "+found.length+" 处典型模板占位文字。",found.slice(0,5).map(p=>"段落 "+p.index+"："+p.text.slice(0,120)).join("；"),"核实版权占位信息是否必须保留；其他占位文字一般应删除。"):result("pass","未匹配到已知占位符模式。","仅覆盖已知模式；不保证识别全部占位内容","仍需人工通读模板中的示例文字。");}
+ if(check==="tabs"){const allowed=paras.filter(p=>p.hasTabs&&/(?:equation|formula|公式)/i.test(p.styleId+" "+p.styleName)),found=paras.filter(p=>p.hasTabs&&!allowed.includes(p));return found.length?result(reliable?"fail":"review","检测到 "+found.length+" 处非公式段落含手动 Tab"+(reliable?"，违反上传模板的明确禁用要求。":"，但当前来源未足以确认该要求是否强制。"),found.slice(0,8).map(p=>"段落 "+p.index+"："+p.text.slice(0,100)).join("；"),reliable?"删除这些段落中的手动 Tab，使用模板段落样式、制表位或段落缩进实现对齐；公式编号段落除外。":"先确认该要求是否适用于这份稿件；若适用，删除列出的手动 Tab 并改用段落设置。"):result("pass","未检测到非公式段落 Tab。","Word 段落结构；公式编号定位可能合理使用 Tab","无需因本项单独修改，仍请人工检查公式排版。");}
+ if(check==="placeholder"){const patterns=[/XXX-X-XXXX-XXXX-X/i,/©20XX IEEE/i,/\bPaper\s+Title\s*\*?(?=\s|$|[,:;.!?])/i,/Sample of a Table footnote/i,/Insert paper title/i,/填入(?:论文|标题|作者)/],found=paras.filter(p=>patterns.some(re=>re.test(p.text)));return found.length?result(reliable?"fail":"review","识别到 "+found.length+" 处典型模板占位文字。",found.slice(0,5).map(p=>"段落 "+p.index+"："+p.text.slice(0,120)).join("；"),"核实版权占位信息是否必须保留；其他占位文字一般应删除。"):result("pass","未匹配到已知占位符模式。","仅覆盖已知模式；不保证识别全部占位内容","仍需人工通读模板中的示例文字。");}
  if(check==="a4"){const secs=manuscript.sections;if(!secs.length)return result("review","未识别到分节纸张尺寸。","DOCX sectPr","人工确认页面尺寸。");const missing=secs.some(s=>!Number.isFinite(s.widthTwip)||!Number.isFinite(s.heightTwip)),bad=secs.filter(s=>Number.isFinite(s.widthTwip)&&Number.isFinite(s.heightTwip)&&(Math.abs(s.widthTwip-11906)>45||Math.abs(s.heightTwip-16838)>45));if(missing)return result("review","部分分节纸张尺寸未读取。","Word sectPr","在 Word 中检查每个分节的页面设置。");return bad.length?result(reliable?"fail":"review",bad.length+" 个分节的纸张尺寸并非 A4。","检测到分节："+bad.map(s=>Math.round(s.widthTwip)+"×"+Math.round(s.heightTwip)+" twips").join("；"),"核对所有分节是否应使用 A4。"):result("pass","已核对 "+secs.length+" 个分节，纸张尺寸为 A4。",secs.map(s=>Math.round(s.widthTwip)+"×"+Math.round(s.heightTwip)+" twips").join("；"),"无需因页面尺寸单独修改。");}
  if(check==="decimalZero"){const found=paras.filter(p=>/(?<![\w/])\.\d+(?![\w/])/.test(p.text)&&!/(?:doi:|https?:\/\/)/i.test(p.text));return found.length?result("review","发现 "+found.length+" 处可能缺少前导零的小数，未作违规判定。",found.slice(0,5).map(p=>"段落 "+p.index+"："+p.text.slice(0,125)).join("；"),"检查数学表达式、参考文献和数字语境后再修改。"):result("pass","在可解析的普通文本中未发现明显省略前导零的小数。","正文纯文本；公式对象与图中标签未检查","无需因本项单独修改。");}
  if(check==="abstractLimit"){
@@ -65,16 +65,20 @@ function checkRule(rule,manuscript,template){
   const actual=manuscript.sections||[],expected=template.model.sections||[];
   if(!actual.length||!expected.length)return result("review","至少一份文档缺少可读取的页面设置。","模板与论文的 Word sectPr","在 Word 中检查页面、页边距和分栏设置。");
   const keys=[["widthTwip","纸张宽度",45],["heightTwip","纸张高度",45],["topTwip","上页边距",80],["bottomTwip","下页边距",80],["leftTwip","左页边距",80],["rightTwip","右页边距",80],["columns","分栏数",0]];
-  const count=Math.min(actual.length,expected.length),diffs=[],unknown=[];
+  const sectionCountDiff=actual.length!==expected.length;
+  // When section counts differ, later sections cannot be safely paired by index:
+  // a legitimate landscape/table section may shift the correspondence. Compare
+  // only the first section and leave the rest for review instead of false failures.
+  const count=sectionCountDiff?1:actual.length,diffs=[],unknown=[];
   const format=s=>keys.map(([k,label])=>label+"="+(Number.isFinite(s[k])?(k.endsWith("Twip")?s[k]+" twips":s[k]):"无法读取")).join("；");
   for(let i=0;i<count;i++)for(const [key,label,tolerance] of keys){
    const a=actual[i][key],t=expected[i][key];
    if(!Number.isFinite(a)||!Number.isFinite(t)){unknown.push("第 "+(i+1)+" 节 "+label);continue;}
    if(Math.abs(a-t)>tolerance)diffs.push("第 "+(i+1)+" 节 "+label+"（模板 "+t+"；论文 "+a+(key.endsWith("Twip")?" twips":"")+"）");
   }
-  if(actual.length!==expected.length)diffs.push("分节数不同（模板 "+expected.length+"；论文 "+actual.length+"）");
-  if(diffs.length)return result("review","已检测到与上传模板的页面版式差异（末节页面参数可能不同或其他分节有差异）："+diffs.join("；"),"模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "), "确认模板适用于目标稿件及投稿阶段后，在 Word 中逐节修正页面尺寸、页边距或分栏；不同分节可能有合法用途。");
-  if(unknown.length)return result("review","已比较 "+count+" 对分节，但部分页面参数无法可靠读取。","无法读取："+unknown.join("、")+"；模板 "+expected.length+" 节，论文 "+actual.length+" 节。","在 Word 中逐节检查页面设置。");
+  if(diffs.length&&sectionCountDiff)return result("review","检测到可量化的页面参数差异："+diffs.join("；")+"；但分节数不同（模板 "+expected.length+"；论文 "+actual.length+"），无法可靠地按节对应，暂不将其判为确定违规。","模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "),"请在 Word 中逐节对照模板确认纸张大小、页边距和分栏；若确认某一对应分节违反模板，再修正该节。不要仅为匹配分节数量而删除合法分节。");
+  if(diffs.length)return result("fail","已确认与上传模板存在可量化的页面版式差异："+diffs.join("；"),"模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "), "请在 Word 的“布局/页面设置”中，按差异清单逐项修正纸张大小、页边距或分栏数；保存后重新检测。");
+  if(unknown.length||sectionCountDiff)return result("review","已比较 "+count+" 对分节，未发现已读取参数的明确差异，但"+(sectionCountDiff?"分节数不同（模板 "+expected.length+"；论文 "+actual.length+"）；为避免错误配对，只自动对照首节，其余分节需要逐节核验。":"部分页面参数无法可靠读取")+"，不能仅凭这一点认定格式错误。","无法读取："+(unknown.length?unknown.join("、"):"无")+"；模板 "+expected.length+" 节，论文 "+actual.length+" 节。","检查额外分节的用途及无法读取的页面参数；只有确认违反适用模板要求时才标记为错误。");
   return result("pass","已比较 "+count+" 对分节的纸张尺寸、页边距和分栏；未发现超出容差的差异。","模板："+expected.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | ")+"；论文："+actual.map((s,i)=>"第"+(i+1)+"节 "+format(s)).join(" | "),"当前可解析的页面参数与模板基本一致；仍需检查最终渲染和局部页面设置。");
  }
  if(check==="images")return result("review","图片 PPI 由基础检查器单独核对；矢量图和图中标签仍需人工验证。","DOCX 图像对象","核对图像清晰度和最终排版大小。");
@@ -105,7 +109,7 @@ function usedStyleSamples(model){
   const name=p.styleName||def?.name||sid;
   if(!sid&&!name)continue;
   const key=sid?"id:"+normalizeStyle(sid):"name:"+normalizeStyle(name);
-  if(!out.has(key))out.set(key,{id:sid,name,props:p.properties||def?.props||{},runOverrides:p.runOverrides||[],index:p.index,text:p.text});
+  if(!out.has(key))out.set(key,{id:sid,name,props:p.properties||def?.props||{},directParagraphProperties:p.directParagraphProperties||{},runOverrides:p.runOverrides||[],index:p.index,text:p.text});
  }
  return [...out.values()];
 }
@@ -205,10 +209,12 @@ function compareTemplateStyles(templateModel,manuscriptModel,templateName,manusc
    if(role)out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"样式格式无法量化对照："+t.name,text:"机器可读基准：模板样式“"+t.name+"”；当前 OOXML 未提供双方都可比较的格式值。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:"advisory",check:"templateStyleCompare",status:"review",detail:"模板与论文中虽找到相似样式，但没有双方均可读取的显式格式属性。",actualValue:"模板样式："+t.name+"；论文样式："+m.name+"；可比较的格式属性：0",evidence:"比较来源为两个 DOCX 的 styles.xml / 段落样式解析结果；局部直接格式与最终渲染未完整覆盖。",recommendation:"在 Word 中查看这两个样式的实际字体、字号、行距与缩进。",sourceIndex:t.index});
    continue;
   }
+  const directDiffs=diffs.filter(([k])=>(t.directParagraphProperties&&t.directParagraphProperties[k]!==undefined)||(m.directParagraphProperties&&m.directParagraphProperties[k]!==undefined));
+  const findingStatus=diffs.length?(directDiffs.length?"review":"fail"):"pass";
   const detail=diffs.length
-    ?"发现可量化的格式差异："+diffs.map(([k,label])=>label+"（模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)+"）").join("；")
+    ?(directDiffs.length?"发现段落样例的可量化格式差异，但至少一项来自段落级直接格式，样例差异可能与内容角色有关，暂列待核验：":"发现可量化的样式格式差异：")+diffs.map(([k,label])=>label+"（模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)+"）").join("；")
     :"在 "+shared.length+" 个可读取属性中未发现超出容差的差异。";
-  out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"模板样式对照："+t.name,text:"机器可读基准：模板 Word 样式“"+t.name+"”；对比论文样式“"+m.name+"”。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:"advisory",check:"templateStyleCompare",status:diffs.length?"review":"pass",detail,actualValue:diffs.length?diffs.map(([k,label])=>label+": 模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)).join("；"):"未发现超容差差异（比较 "+shared.length+" 项）",evidence:"模板第 "+t.index+" 段使用样式“"+t.name+"”；论文第 "+m.index+" 段使用样式“"+m.name+"”。比较的可读取属性："+shared.map(([,label])=>label).join("、")+"。未完整覆盖所有 run 级直接格式和最终页面渲染。",recommendation:diffs.length?"选中论文对应段落，确认它是否应采用模板样式；按目标模板修正字体、字号、行距、段前后距或缩进，并检查局部格式覆盖。":"当前可解析的匹配样式值与模板基本一致；仍需抽查局部加粗/斜体、图表实际位置和最终分页。",sourceIndex:t.index});
+  out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"模板样式对照："+t.name,text:"机器可读基准：模板 Word 样式“"+t.name+"”；对比论文样式“"+m.name+"”。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:diffs.length&&!directDiffs.length?"mandatory":"advisory",check:"templateStyleCompare",status:findingStatus,detail,actualValue:diffs.length?diffs.map(([k,label])=>label+": 模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)).join("；"):"未发现超容差差异（比较 "+shared.length+" 项）",evidence:"模板第 "+t.index+" 段使用样式“"+t.name+"”；论文第 "+m.index+" 段使用样式“"+m.name+"”。比较的可读取属性："+shared.map(([,label])=>label).join("、")+"。"+(directDiffs.length?"其中涉及段落级直接格式覆盖，不能仅凭单个样例确定为样式定义违规。":"")+"未完整覆盖所有 run 级直接格式和最终页面渲染。",recommendation:diffs.length?(directDiffs.length?"核对报告列出的实际值与模板值，并检查该段是否因标题、摘要或特殊内容而使用了有意的直接格式；只有确认模板要求适用于该段后再修改。":"已检测到明确的样式属性差异。按报告列出的模板值与论文实际值，修正对应 Word 样式的字体、字号、对齐、行距、段前后距、缩进或颜色；再重新检测。"):"当前可读取的匹配样式属性未发现超出容差的差异。",sourceIndex:t.index});
  }
  return out;
 }
