@@ -263,3 +263,29 @@ def test_chinese_abstract_word_limit_stops_before_keywords_heading(local_page):
     }""", src)
     assert actual and actual[0]['status'] == 'pass', actual
     assert '10个汉字' in actual[0]['detail'], actual
+
+
+def test_chinese_abstract_not_exceed_limit_is_mandatory_and_fails_when_over(local_page):
+    paper = fake_docx(abstract='甲乙丙丁戊己庚辛壬癸子', abstract_heading='摘要')
+    local_page.locator('#paper').set_input_files({
+        'name': 'synthetic-cn-paper.docx',
+        'mimeType': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'buffer': paper,
+    })
+    guide = '摘要不超过10字。'.encode('utf-8')
+    local_page.locator('#template').set_input_files({
+        'name': 'abstract-limit.txt', 'mimeType': 'text/plain', 'buffer': guide,
+    })
+    src = module_url('rules-engine.js')
+    actual = local_page.evaluate("""async src => {
+      const m = await import(src);
+      const a = await m.createRulesAudit(document.querySelector('#paper').files[0], {
+        templateFile: document.querySelector('#template').files[0]
+      });
+      return a.requirements.filter(x => x.check === 'abstractLimit').map(x => ({
+        strength: x.strength, status: x.status, detail: x.detail
+      }));
+    }""", src)
+    assert actual and actual[0]['strength'] == 'mandatory', actual
+    assert actual[0]['status'] == 'fail', actual
+    assert '11个汉字' in actual[0]['detail'], actual
