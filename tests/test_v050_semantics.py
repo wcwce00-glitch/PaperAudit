@@ -166,7 +166,7 @@ def test_chinese_guidelines_keep_source_and_exclude_unsupported_checks(local_pag
         recommendation:x.recommendation,evidence:x.evidence
       })),notAutomated:a.notAutomated};
     }""",src)
-    assert any(x["originalText"]=="摘要不得超过200字。" for x in actual["requirements"])
+    assert any(x["originalText"]=="摘要不得超过200字。" for x in actual["notAutomated"])
     assert any(x["originalText"]=="请删除所有模板占位文字。" for x in actual["requirements"])
     assert any(x["originalText"]=="论文写作请遵循会议作者指南。" for x in actual["notAutomated"])
     assert all(x["sourceFile"]=="synthetic-cn-guide.txt" for x in actual["requirements"])
