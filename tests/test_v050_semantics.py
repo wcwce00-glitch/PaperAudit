@@ -120,7 +120,7 @@ def test_strict_ooxml_template_and_rule_inventory(local_page):
     assert actual['fail']==0
     assert 'tabs' in actual['types']
     assert all(('模板第' in s or 'styles.xml' in s or 'sectPr' in s) for s in actual['sources'])
-    assert all('text' in row and 'source' in row and row['status'] in ('pass','fail','review') for row in actual['requirements'])
+    assert all('text' in row and 'source' in row and row['status'] in ('pass','fail') for row in actual['requirements'])
 
 def test_explicit_hard_tab_prohibition_is_actionable_failure(local_page):
     loaded_files(local_page,paper=fake_docx(tabs=True))
@@ -145,7 +145,7 @@ def test_builtin_profile_works_without_template(local_page):
     assert actual['stats']['total']>=6
     assert actual['hasAi'] is False
 
-def test_chinese_guidelines_keep_verbatim_source_and_unknown_checks_as_review(local_page):
+def test_chinese_guidelines_keep_source_and_exclude_unsupported_checks(local_page):
     loaded_files(local_page)
     guide="摘要不得超过200字。\n请删除所有模板占位文字。\n论文写作请遵循会议作者指南。".encode("utf-8")
     local_page.locator("#template").set_input_files({
@@ -166,8 +166,8 @@ def test_chinese_guidelines_keep_verbatim_source_and_unknown_checks_as_review(lo
         recommendation:x.recommendation,evidence:x.evidence
       })),notAutomated:a.notAutomated};
     }""",src)
-    assert any(x["originalText"]=="摘要不得超过200字。" for x in actual)
-    assert any(x["originalText"]=="请删除所有模板占位文字。" for x in actual)
+    assert any(x["originalText"]=="摘要不得超过200字。" for x in actual["requirements"])
+    assert any(x["originalText"]=="请删除所有模板占位文字。" for x in actual["requirements"])
     assert any(x["originalText"]=="论文写作请遵循会议作者指南。" for x in actual["notAutomated"])
     assert all(x["sourceFile"]=="synthetic-cn-guide.txt" for x in actual["requirements"])
     assert all(x["originalText"] and x["actualValue"] and x["recommendation"] for x in actual["requirements"])
