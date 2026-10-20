@@ -91,18 +91,18 @@ function renderRequirements(audit){
   if(!area||!target)return;
   target.replaceChildren();area.hidden=!audit;
   if(!audit)return;
-  el('requirements-summary').textContent='审核依据：'+audit.name+'。来源说明：'+audit.source+'。共 '+audit.stats.total+' 条：已核查符合 '+audit.stats.pass+'，确认不符 '+audit.stats.fail+'，待核验 '+audit.stats.review+'。无法可靠判断的项目不会被报告为违规。';
+  el('requirements-summary').textContent='审核依据：'+audit.name+'。来源说明：'+audit.source+'。共 '+audit.stats.total+' 条可自动判定要求：正确 '+audit.stats.pass+' 条，错误 '+audit.stats.fail+' 条。另有 '+(audit.stats.notAutomated||0)+' 条当前无法可靠自动判定，已排除在对错结果与合格率之外。';
   for(const rule of audit.requirements){
     const item=document.createElement('article');item.className='requirement-item';
     const head=document.createElement('div');head.className='rq-head';
     const title=document.createElement('h4');title.textContent=(rule.checkedDocument?rule.checkedDocument+' · ':'')+rule.id+' · '+rule.title;
-    const tag=document.createElement('span');tag.className='rq-pill '+rule.status;tag.textContent=rule.status==='pass'?'已核查 · 符合':rule.status==='fail'?'有证据支持不符':'待核验';
+    const tag=document.createElement('span');tag.className='rq-pill '+rule.status;tag.textContent=rule.status==='pass'?'正确':'错误';
     head.append(title,tag);
     const original=document.createElement('p');original.textContent='规则原文：'+(rule.originalText||rule.text||'');
     const source=document.createElement('div');source.className='rq-source';source.textContent='来源：'+(rule.sourceFile||rule.source||'未注明')+(rule.sourceParagraph?' · 第 '+rule.sourceParagraph+' 段':'');
     const actual=document.createElement('p');actual.className='rq-result';actual.textContent='实际检测值：'+(rule.actualValue||rule.detail||'未执行可靠的自动检测');
     const evidence=document.createElement('p');evidence.className='rq-source';evidence.textContent='判断依据：'+(rule.evidence||'当前检测器没有足够证据确认合规或违规。');
-    const advice=document.createElement('p');advice.className='rq-advice';advice.textContent='修改建议：'+(rule.recommendation||rule.action||'人工核对原文及适用条件；待核验不等于违规。');
+    const advice=document.createElement('p');advice.className='rq-advice';advice.textContent='修改建议：'+(rule.recommendation||rule.action||(rule.status==='fail'?'按模板要求修正后重新检测。':'当前未发现此项不符。'));
     item.append(head,original,source,actual,evidence,advice);target.append(item);
   }
 }
@@ -233,7 +233,7 @@ el('run-local-ai').addEventListener('click',async()=>{
       text=model.paragraphs.map(p=>p.text).filter(Boolean).join('\n');
     }
     aiSuggestions=await suggestRequirementsWithLocalAI(text.slice(0,30000),msg=>state.textContent=msg);
-    state.textContent='本地 AI 提议 '+aiSuggestions.length+' 条候选要求。请重新运行检查；所有 AI 条目仍标记为待核验。';
+    state.textContent='本地 AI 提议 '+aiSuggestions.length+' 条候选要求。请重新运行检查；未经确定性规则验证的 AI 候选不会计入正确/错误结果。';
   }catch(err){state.textContent='AI 暂不可用：'+String(err.message||err)+'。基础检查不受影响。';}
   finally{button.disabled=false;}
 });
@@ -274,10 +274,10 @@ el('run-audit').addEventListener('click',async()=>{
         audits.push(await createRulesAudit(docxFile,{templateFile,profileId:profileSelect.value,aiSuggestions}));
       }
       const requirements=audits.flatMap((audit,index)=>audit.requirements.map(rule=>({...rule,checkedDocument:validDocxFiles[index].name})));
+      const notAutomated=audits.flatMap((audit,index)=>(audit.notAutomated||[]).map(rule=>({...rule,checkedDocument:validDocxFiles[index].name})));
       const pass=requirements.filter(x=>x.status==='pass').length;
       const fail=requirements.filter(x=>x.status==='fail').length;
-      const review=requirements.filter(x=>x.status==='review').length;
-      lastResult.rulesAudit={name:audits[0].name,source:audits[0].source,requirements,stats:{total:requirements.length,pass,fail,review},isUserTemplate:!!templateFile,profileId:audits[0].profileId};
+      lastResult.rulesAudit={name:audits[0].name,source:audits[0].source,requirements,notAutomated,stats:{total:requirements.length,pass,fail,notAutomated:notAutomated.length},isUserTemplate:!!templateFile,profileId:audits[0].profileId};
       lastResult.coverage.templateInstructions=requirements.length;
       lastResult.template={
         ...(comparisonTemplate||{}),
@@ -296,7 +296,7 @@ el('run-audit').addEventListener('click',async()=>{
     }
     render(lastResult);
     const mode=templateFile?'模板驱动检查':'通用预检';
-    el('status').textContent=`${mode}完成：${lastResult.findings.length} 项需关注或待确认事项；${lastResult.rulesAudit?.stats.total||0} 条逐项规则已列出`;
+    el('status').textContent=`${mode}完成：${lastResult.findings.length} 项发现；${lastResult.rulesAudit?.stats.total||0} 条可自动判定规则（正确 ${lastResult.rulesAudit?.stats.pass||0}，错误 ${lastResult.rulesAudit?.stats.fail||0}）；另有 ${lastResult.rulesAudit?.stats.notAutomated||0} 条未纳入自动判定`;
   }catch(err){
     el('status').textContent=`检查失败：${err.message||err}`;
   }finally{
