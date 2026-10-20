@@ -227,6 +227,10 @@ export async function createRulesAudit(manuscriptFile,{templateFile=null,profile
  const checks=standards.map(rule=>{const checked=checkRule(rule,manuscript,template);return {...rule,...checked,originalText:rule.text,sourceFile:templateFile?templateFile.name:source,sourceParagraph:rule.sourceIndex||null,actualValue:checked.actualValue||checked.detail,recommendation:checked.action||(checked.status==="pass"?"当前支持的检查未发现异常；仍需核对完整投稿指南。":"根据上述证据人工核对；未确认不符前不要直接判为违规。")};});
  const suggestions=aiSuggestions.map((s,i)=>({id:"AI-"+(i+1),title:String(s.title||"AI 候选要求").slice(0,100),text:String(s.text||"").slice(0,2000),originalText:String(s.text||"").slice(0,2000),source:source+" · 本地 AI 候选（未经正式核验）",sourceFile:templateFile?templateFile.name:"",sourceParagraph:null,sourceOffset:s.sourceOffset||0,strength:"unverified",check:"manual",params:{},status:"review",detail:"AI 仅提供待核验的原文候选条款，不自动判定论文违规。",actualValue:"未进行自动合规判断",evidence:"候选原文必须在来源文件中逐字存在",action:"人工核对原文与适用范围；不要仅凭 AI 建议修改论文。",recommendation:"人工核对原文与适用范围；不要仅凭 AI 建议修改论文。"}));
  const measuredComparisons=template&&template.model?compareTemplateStyles(template.model,manuscript,name,manuscriptFile.name):[];
- const requirements=[...checks,...measuredComparisons,...suggestions];
- return {name,source,profileId:templateFile?null:profileId,requirements,stats:{total:requirements.length,pass:requirements.filter(x=>x.status==="pass").length,fail:requirements.filter(x=>x.status==="fail").length,review:requirements.filter(x=>x.status==="review").length},isUserTemplate:!!templateFile,formatVersion:"0.5.1"};
+ const allResults=[...checks,...measuredComparisons,...suggestions];
+ // The user-facing verdict list is strictly binary. Rules the engine cannot
+ // objectively evaluate are retained separately and excluded from pass/fail totals.
+ const requirements=allResults.filter(x=>x.status==="pass"||x.status==="fail");
+ const notAutomated=allResults.filter(x=>x.status!=="pass"&&x.status!=="fail").map(x=>({...x,status:"not-automated",detail:"本条规则当前无法由自动检测器作出可靠的对错判断，因此不计入正确/错误数量。"}));
+ return {name,source,profileId:templateFile?null:profileId,requirements,notAutomated,stats:{total:requirements.length,pass:requirements.filter(x=>x.status==="pass").length,fail:requirements.filter(x=>x.status==="fail").length,notAutomated:notAutomated.length},isUserTemplate:!!templateFile,formatVersion:"0.5.2"};
 }
