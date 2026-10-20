@@ -227,26 +227,16 @@ def test_common_quantified_abstract_limit_wording_is_extracted_as_explicit_rule(
         document.querySelector("#paper").files[0],
         {templateFile: document.querySelector("#template").files[0]}
       );
-      return a.requirements.filter(x => x.check === "abstractLimit").map(x => ({
-        originalText: x.originalText, strength: x.strength, params: x.params, status: x.status
-      }));
+      return {
+        requirements: a.requirements.filter(x => x.check === "abstractLimit"),
+        notAutomated: a.notAutomated.filter(x => x.check === "abstractLimit")
+      };
     }""", src)
-    assert len(actual) == 5, actual
-    assert [x["params"]["max"] for x in actual] == [200, 300, 250, 180, 220], actual
-    assert all(x["strength"] == "mandatory" for x in actual), actual
-    # The synthetic manuscript has no reliably delimited abstract, so it must
-    # remain review rather than inventing a pass/fail result.
-    assert not actual, actual
-    # No abstract heading means no binary verdict is fabricated; the rule is
-    # reported separately as not automated and excluded from correctness totals.
-    audit = local_page.evaluate("""async src => {
-      const m = await import(src);
-      return await m.createRulesAudit(document.querySelector("#paper").files[0], {
-        templateFile: document.querySelector("#template").files[0]
-      });
-    }""", src)
-    assert len([x for x in audit["notAutomated"] if x["check"] == "abstractLimit"]) == 5
-    assert audit["stats"]["total"] == audit["stats"]["pass"] + audit["stats"]["fail"]
+    assert actual["requirements"] == [], actual
+    assert len(actual["notAutomated"]) == 5, actual
+    assert [x["params"]["max"] for x in actual["notAutomated"]] == [200, 300, 250, 180, 220], actual
+    assert all(x["strength"] == "mandatory" for x in actual["notAutomated"]), actual
+    assert all(x["status"] == "not-automated" for x in actual["notAutomated"]), actual
 
 
 def test_chinese_abstract_word_limit_stops_before_keywords_heading(local_page):
