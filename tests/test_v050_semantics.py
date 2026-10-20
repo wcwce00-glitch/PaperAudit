@@ -160,20 +160,19 @@ def test_chinese_guidelines_keep_verbatim_source_and_unknown_checks_as_review(lo
         document.querySelector("#paper").files[0],
         {templateFile:document.querySelector("#template").files[0]}
       );
-      return a.requirements.map(x=>({
+      return {requirements:a.requirements.map(x=>({
         id:x.id,check:x.check,originalText:x.originalText,sourceFile:x.sourceFile,
         sourceParagraph:x.sourceParagraph,actualValue:x.actualValue,status:x.status,
         recommendation:x.recommendation,evidence:x.evidence
-      }));
+      })),notAutomated:a.notAutomated};
     }""",src)
     assert any(x["originalText"]=="摘要不得超过200字。" for x in actual)
     assert any(x["originalText"]=="请删除所有模板占位文字。" for x in actual)
-    assert any(x["originalText"]=="论文写作请遵循会议作者指南。" for x in actual)
-    assert all(x["sourceFile"]=="synthetic-cn-guide.txt" for x in actual)
-    assert all(x["originalText"] and x["actualValue"] and x["recommendation"] for x in actual)
-    assert all(x["status"] in ("pass","fail","review") for x in actual)
-    assert any(x["check"]=="manual" and x["status"]=="review" for x in actual)
-    assert all(x["status"]!="fail" for x in actual if x["check"]=="manual")
+    assert any(x["originalText"]=="论文写作请遵循会议作者指南。" for x in actual["notAutomated"])
+    assert all(x["sourceFile"]=="synthetic-cn-guide.txt" for x in actual["requirements"])
+    assert all(x["originalText"] and x["actualValue"] and x["recommendation"] for x in actual["requirements"])
+    assert all(x["status"] in ("pass","fail") for x in actual["requirements"])
+    assert any(x["check"]=="manual" and x["status"]=="not-automated" for x in actual["notAutomated"])
 
 
 def test_template_page_margin_mismatch_is_actionable_failure(local_page):
@@ -206,11 +205,11 @@ def test_extra_section_is_not_alone_a_confirmed_format_error(local_page):
     actual=local_page.evaluate("""async src => {
       const m=await import(src);
       const a=await m.createRulesAudit(document.querySelector("#paper").files[0],{templateFile:document.querySelector("#template").files[0]});
-      return a.requirements.filter(x=>x.check==="styleCompare").map(x=>({status:x.status,detail:x.detail}));
+      return {requirements:a.requirements.filter(x=>x.check==="styleCompare"),notAutomated:a.notAutomated.filter(x=>x.check==="styleCompare")};
     }""",src)
-    assert actual and actual[0]["status"]=="review"
-    assert "分节数不同" in actual[0]["detail"]
-    assert "不能仅凭这一点认定格式错误" in actual[0]["detail"]
+    assert actual["requirements"] == []
+    assert actual["notAutomated"] and actual["notAutomated"][0]["status"] == "not-automated"
+    assert "分节数不同" in actual["notAutomated"][0]["detail"]
 
 
 def test_common_quantified_abstract_limit_wording_is_extracted_as_explicit_rule(local_page):
@@ -237,7 +236,17 @@ def test_common_quantified_abstract_limit_wording_is_extracted_as_explicit_rule(
     assert all(x["strength"] == "mandatory" for x in actual), actual
     # The synthetic manuscript has no reliably delimited abstract, so it must
     # remain review rather than inventing a pass/fail result.
-    assert all(x["status"] == "review" for x in actual), actual
+    assert not actual, actual
+    # No abstract heading means no binary verdict is fabricated; the rule is
+    # reported separately as not automated and excluded from correctness totals.
+    audit = local_page.evaluate("""async src => {
+      const m = await import(src);
+      return await m.createRulesAudit(document.querySelector("#paper").files[0], {
+        templateFile: document.querySelector("#template").files[0]
+      });
+    }""", src)
+    assert len([x for x in audit["notAutomated"] if x["check"] == "abstractLimit"]) == 5
+    assert audit["stats"]["total"] == audit["stats"]["pass"] + audit["stats"]["fail"]
 
 
 def test_chinese_abstract_word_limit_stops_before_keywords_heading(local_page):
