@@ -1,8 +1,8 @@
 /* Conservative template requirement inventory. Unknown never means violated. */
 import {parseDocxModel} from "./docx-model.js";
 import {getProfile} from "./standards.js";
-const INDICATORS=/(?:必须|应当|不得|不允许|禁止|至少|至多|不得超过|不超过|需(?:要)?|要求|宜|建议|避免|应|请|删除|\bremove\b|\bmust\b|\bshould\b|\bshall\b|\brequired\b|\bdo not\b|\bplease\b|\bavoid\b|\buse\b|\bkeep\b|\bdefine\b|\bplace\b|\bnumber\b|\bprovide\b|\bcapitalize\b|\bitalicize\b|\bspell out\b|\bdo not\b|\bno more than\b|\bat least\b|\bmaximum\b|\bminimum\b)/i;
-const STRICT=/(?:必须|应当|不得|不允许|禁止|须|请勿|删除|\bmust\b|\bshall\b|\bdo not\b|\bremove\b|\bno more than\b|\bat least\b)/i;
+const INDICATORS=/(?:必须|应当|不得|不允许|禁止|至少|至多|最多|控制在|上限为|限|不得超过|不超过|需(?:要)?|要求|宜|建议|避免|应|请|删除|\bremove\b|\bmust\b|\bshould\b|\bshall\b|\brequired\b|\bdo not\b|\bplease\b|\bavoid\b|\buse\b|\bkeep\b|\bdefine\b|\bplace\b|\bnumber\b|\bprovide\b|\bcapitalize\b|\bitalicize\b|\bspell out\b|\bdo not\b|\bno more than\b|\bat least\b|\bmaximum\b|\bmax\b|\bminimum\b)/i;
+const STRICT=/(?:必须|应当|不得|不允许|禁止|须|请勿|删除|最多|至多|不应超过|不多于|不超过|限|控制在|上限为|\bmust\b|\bshall\b|\bdo not\b|\bremove\b|\bno more than\b|\bat most\b|\bmaximum(?: of)?\b|\bmax\.?\b|\b(?:must|shall|should|may) not exceed\b|\bnot exceed\b|\bat least\b)/i;
 function stable(s){return s.toLowerCase().replace(/\s+/g," ").trim();}
 function splitSentences(s){
  // Split at the sentence boundary itself. Avoid "\\s*" on a zero-width
@@ -19,8 +19,8 @@ function classify(s){
  if(/(?:template\s+text\s+is\s+removed|remove\s+(?:all\s+)?template\s+text|删除.{0,15}(?:模板|占位)文字)/i.test(s))return {check:"placeholder",params:{}};
  if(/(?:A4\s+paper|A4\s+paper\s+size|A4\s+纸)/i.test(s))return {check:"a4",params:{}};
  if(/(?:number\s+equations\s+consecutively|公式.{0,10}连续编号)/i.test(s))return {check:"equationNumbers",params:{}};
- const zh=/(?:摘要|Abstract).{0,40}?(?:不得超过|不超过|最多|至多)\s*(\d{2,4})\s*(字|词)/i.exec(s);
- const en=/\babstract\b.{0,60}?(?:no\s+more\s+than|at\s+most|maximum\s+of|must\s+not\s+exceed)\s*(\d{2,4})\s*words/i.exec(s);
+ const zh=/(?:摘要|Abstract).{0,40}?(?:不得超过|不应超过|不超过|不多于|最多|至多|限|上限为|控制在)\s*(\d{2,4})\s*(字|词)(?:以内)?/i.exec(s);
+ const en=/\babstract\b.{0,60}?(?:no\s+more\s+than|no\s+longer\s+than|at\s+most|maximum(?:\s+of)?|max\.?|(?:must|shall|should|may)\s+not\s+exceed|not\s+exceed|up\s+to|within)\s*(\d{2,4})\s*words/i.exec(s);
  if(zh)return {check:"abstractLimit",params:{max:+zh[1],language:zh[2]==="词"?"en":"zh"}};
  if(en)return {check:"abstractLimit",params:{max:+en[1],language:"en"}};
  return {check:"manual",params:{}};
@@ -45,7 +45,7 @@ function checkRule(rule,manuscript,template){
   const pieces=[];if(inline)pieces.push(inline);
   for(let i=start+1;i<paras.length&&i<start+13;i++){
    const p=paras[i],t=p.text.trim();
-   if(/^(?:关键词|关键字|key\s*words?|index\s*terms|references|bibliography|参考文献|引言|绪论|introduction|1\s*[.]?\s+introduction)\b/i.test(t))break;
+   if(/^(?:关键词|关键字|key\s*words?|index\s*terms|references|bibliography|参考文献|引言|绪论|introduction|1\s*[.]?\s+introduction)(?=\s|[:：.]|$)/i.test(t))break;
    if(/^(?:\d+(?:\.\d+)*\s+).{0,80}$/.test(t)&&/^(?:\d+(?:\.\d+)*\s+)?(?:introduction|引言|绪论|methods?|方法|materials|结果|results|讨论|discussion)\b/i.test(t))break;
    if(/^(?:heading|标题)\s*[1-3]$/i.test(p.styleName||""))break;
    if(t)pieces.push(t);
@@ -212,7 +212,7 @@ function compareTemplateStyles(templateModel,manuscriptModel,templateName,manusc
   const directDiffs=diffs.filter(([k])=>(t.directParagraphProperties&&t.directParagraphProperties[k]!==undefined)||(m.directParagraphProperties&&m.directParagraphProperties[k]!==undefined));
   const findingStatus=diffs.length?(directDiffs.length?"review":"fail"):"pass";
   const detail=diffs.length
-    ?(directDiffs.length?"发现段落样例的可量化格式差异，但至少一项来自段落级直接格式，样例差异可能与内容角色有关，暂列待核验：":"发现可量化的样式格式差异：")+diffs.map(([k,label])=>label+"（模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)+"）").join("；")
+    ?(directDiffs.length?"发现段落样例的可量化格式差异，但至少一项来自段落级直接格式，样例差异可能与内容角色有关，暂不自动判定：":"发现可量化的样式格式差异：")+diffs.map(([k,label])=>label+"（模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)+"）").join("；")
     :"在 "+shared.length+" 个可读取属性中未发现超出容差的差异。";
   out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"模板样式对照："+t.name,text:"机器可读基准：模板 Word 样式“"+t.name+"”；对比论文样式“"+m.name+"”。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:diffs.length&&!directDiffs.length?"mandatory":"advisory",check:"templateStyleCompare",status:findingStatus,detail,actualValue:diffs.length?diffs.map(([k,label])=>label+": 模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)).join("；"):"未发现超容差差异（比较 "+shared.length+" 项）",evidence:"模板第 "+t.index+" 段使用样式“"+t.name+"”；论文第 "+m.index+" 段使用样式“"+m.name+"”。比较的可读取属性："+shared.map(([,label])=>label).join("、")+"。"+(directDiffs.length?"其中涉及段落级直接格式覆盖，不能仅凭单个样例确定为样式定义违规。":"")+"未完整覆盖所有 run 级直接格式和最终页面渲染。",recommendation:diffs.length?(directDiffs.length?"核对报告列出的实际值与模板值，并检查该段是否因标题、摘要或特殊内容而使用了有意的直接格式；只有确认模板要求适用于该段后再修改。":"已检测到明确的样式属性差异。按报告列出的模板值与论文实际值，修正对应 Word 样式的字体、字号、对齐、行距、段前后距、缩进或颜色；再重新检测。"):"当前可读取的匹配样式属性未发现超出容差的差异。",sourceIndex:t.index});
  }
@@ -225,8 +225,12 @@ export async function createRulesAudit(manuscriptFile,{templateFile=null,profile
  else{const profile=getProfile(profileId);name=profile.name;source=profile.description;standards=profile.rules.map(x=>({...x,params:{}}));}
  if(template&&template.model){standards.push({id:"S-paper",title:"对照模板页面与分栏",text:"按上传模板的 Word 页面设置比较纸张大小、页边距与分栏。",source:name+" · sectPr",strength:"advisory",check:"styleCompare",params:{}});}
  const checks=standards.map(rule=>{const checked=checkRule(rule,manuscript,template);return {...rule,...checked,originalText:rule.text,sourceFile:templateFile?templateFile.name:source,sourceParagraph:rule.sourceIndex||null,actualValue:checked.actualValue||checked.detail,recommendation:checked.action||(checked.status==="pass"?"当前支持的检查未发现异常；仍需核对完整投稿指南。":"根据上述证据人工核对；未确认不符前不要直接判为违规。")};});
- const suggestions=aiSuggestions.map((s,i)=>({id:"AI-"+(i+1),title:String(s.title||"AI 候选要求").slice(0,100),text:String(s.text||"").slice(0,2000),originalText:String(s.text||"").slice(0,2000),source:source+" · 本地 AI 候选（未经正式核验）",sourceFile:templateFile?templateFile.name:"",sourceParagraph:null,sourceOffset:s.sourceOffset||0,strength:"unverified",check:"manual",params:{},status:"review",detail:"AI 仅提供待核验的原文候选条款，不自动判定论文违规。",actualValue:"未进行自动合规判断",evidence:"候选原文必须在来源文件中逐字存在",action:"人工核对原文与适用范围；不要仅凭 AI 建议修改论文。",recommendation:"人工核对原文与适用范围；不要仅凭 AI 建议修改论文。"}));
+ const suggestions=aiSuggestions.map((s,i)=>({id:"AI-"+(i+1),title:String(s.title||"AI 候选要求").slice(0,100),text:String(s.text||"").slice(0,2000),originalText:String(s.text||"").slice(0,2000),source:source+" · 本地 AI 候选（未经正式核验）",sourceFile:templateFile?templateFile.name:"",sourceParagraph:null,sourceOffset:s.sourceOffset||0,strength:"unverified",check:"manual",params:{},status:"review",detail:"AI 只提供候选条款，尚未与来源原文逐条比对，因此不自动判定论文违规。",actualValue:"未进行自动合规判断",evidence:"候选原文必须在来源文件中逐字存在",action:"人工核对原文与适用范围；不要仅凭 AI 建议修改论文。",recommendation:"人工核对原文与适用范围；不要仅凭 AI 建议修改论文。"}));
  const measuredComparisons=template&&template.model?compareTemplateStyles(template.model,manuscript,name,manuscriptFile.name):[];
- const requirements=[...checks,...measuredComparisons,...suggestions];
- return {name,source,profileId:templateFile?null:profileId,requirements,stats:{total:requirements.length,pass:requirements.filter(x=>x.status==="pass").length,fail:requirements.filter(x=>x.status==="fail").length,review:requirements.filter(x=>x.status==="review").length},isUserTemplate:!!templateFile,formatVersion:"0.5.1"};
+ const allResults=[...checks,...measuredComparisons,...suggestions];
+ // The user-facing verdict list is strictly binary. Rules the engine cannot
+ // objectively evaluate are retained separately and excluded from pass/fail totals.
+ const requirements=allResults.filter(x=>x.status==="pass"||x.status==="fail");
+ const notAutomated=allResults.filter(x=>x.status!=="pass"&&x.status!=="fail").map(x=>({...x,status:"not-automated",detail:x.detail||"本条规则当前无法由自动检测器作出可靠的对错判断，因此不计入正确/错误数量。"}));
+ return {name,source,profileId:templateFile?null:profileId,requirements,notAutomated,stats:{total:requirements.length,pass:requirements.filter(x=>x.status==="pass").length,fail:requirements.filter(x=>x.status==="fail").length,notAutomated:notAutomated.length},isUserTemplate:!!templateFile,formatVersion:"0.5.2"};
 }
