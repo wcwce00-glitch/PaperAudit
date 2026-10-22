@@ -212,7 +212,7 @@ function compareTemplateStyles(templateModel,manuscriptModel,templateName,manusc
   const directDiffs=diffs.filter(([k])=>(t.directParagraphProperties&&t.directParagraphProperties[k]!==undefined)||(m.directParagraphProperties&&m.directParagraphProperties[k]!==undefined));
   const findingStatus=diffs.length?(directDiffs.length?"review":"fail"):"pass";
   const detail=diffs.length
-    ?(directDiffs.length?"发现段落样例的可量化格式差异，但至少一项来自段落级直接格式，样例差异可能与内容角色有关，暂列待核验：":"发现可量化的样式格式差异：")+diffs.map(([k,label])=>label+"（模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)+"）").join("；")
+    ?(directDiffs.length?"发现段落样例的可量化格式差异，但至少一项来自段落级直接格式，样例差异可能与内容角色有关，暂不自动判定：":"发现可量化的样式格式差异：")+diffs.map(([k,label])=>label+"（模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)+"）").join("；")
     :"在 "+shared.length+" 个可读取属性中未发现超出容差的差异。";
   out.push({id:"CMP-STYLE-"+String(out.length+1).padStart(2,"0"),title:"模板样式对照："+t.name,text:"机器可读基准：模板 Word 样式“"+t.name+"”；对比论文样式“"+m.name+"”。",originalText:"机器可读基准：模板 styles.xml 中的样式“"+t.name+"”（非自然语言条文）。",source:"模板 styles.xml",sourceFile:templateName,sourceParagraph:t.index,checkedDocument:manuscriptName,strength:diffs.length&&!directDiffs.length?"mandatory":"advisory",check:"templateStyleCompare",status:findingStatus,detail,actualValue:diffs.length?diffs.map(([k,label])=>label+": 模板 "+displayProp(k,t.props[k],t.props)+"；论文 "+displayProp(k,m.props[k],m.props)).join("；"):"未发现超容差差异（比较 "+shared.length+" 项）",evidence:"模板第 "+t.index+" 段使用样式“"+t.name+"”；论文第 "+m.index+" 段使用样式“"+m.name+"”。比较的可读取属性："+shared.map(([,label])=>label).join("、")+"。"+(directDiffs.length?"其中涉及段落级直接格式覆盖，不能仅凭单个样例确定为样式定义违规。":"")+"未完整覆盖所有 run 级直接格式和最终页面渲染。",recommendation:diffs.length?(directDiffs.length?"核对报告列出的实际值与模板值，并检查该段是否因标题、摘要或特殊内容而使用了有意的直接格式；只有确认模板要求适用于该段后再修改。":"已检测到明确的样式属性差异。按报告列出的模板值与论文实际值，修正对应 Word 样式的字体、字号、对齐、行距、段前后距、缩进或颜色；再重新检测。"):"当前可读取的匹配样式属性未发现超出容差的差异。",sourceIndex:t.index});
  }
@@ -231,6 +231,6 @@ export async function createRulesAudit(manuscriptFile,{templateFile=null,profile
  // The user-facing verdict list is strictly binary. Rules the engine cannot
  // objectively evaluate are retained separately and excluded from pass/fail totals.
  const requirements=allResults.filter(x=>x.status==="pass"||x.status==="fail");
- const notAutomated=allResults.filter(x=>x.status!=="pass"&&x.status!=="fail").map(x=>({...x,status:"not-automated",detail:"本条规则当前无法由自动检测器作出可靠的对错判断，因此不计入正确/错误数量。"}));
+ const notAutomated=allResults.filter(x=>x.status!=="pass"&&x.status!=="fail").map(x=>({...x,status:"not-automated",detail:x.detail||"本条规则当前无法由自动检测器作出可靠的对错判断，因此不计入正确/错误数量。"}));
  return {name,source,profileId:templateFile?null:profileId,requirements,notAutomated,stats:{total:requirements.length,pass:requirements.filter(x=>x.status==="pass").length,fail:requirements.filter(x=>x.status==="fail").length,notAutomated:notAutomated.length},isUserTemplate:!!templateFile,formatVersion:"0.5.2"};
 }
