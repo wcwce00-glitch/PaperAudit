@@ -91,20 +91,23 @@ function renderRequirements(audit){
   if(!area||!target)return;
   target.replaceChildren();area.hidden=!audit;
   if(!audit)return;
-  el('requirements-summary').textContent='审核依据：'+audit.name+'。来源说明：'+audit.source+'。共 '+audit.stats.total+' 条可自动判定要求：正确 '+audit.stats.pass+' 条，错误 '+audit.stats.fail+' 条。另有 '+(audit.stats.notAutomated||0)+' 条当前无法可靠自动判定，已排除在对错结果与合格率之外。';
-  for(const rule of audit.requirements){
-    const item=document.createElement('article');item.className='requirement-item';
+  const notAutomated=audit.notAutomated||[];
+  el('requirements-summary').textContent='审核依据：'+audit.name+'。来源说明：'+audit.source+'。共 '+audit.stats.total+' 条可自动判定要求：正确 '+audit.stats.pass+' 条，错误 '+audit.stats.fail+' 条。另列出 '+notAutomated.length+' 条暂未纳入自动对错统计的规则；这些项目不计入正确率或错误率。';
+  const renderRule=(rule,automated)=>{
+    const item=document.createElement('article');item.className='requirement-item'+(automated?'':' requirement-not-automated');
     const head=document.createElement('div');head.className='rq-head';
     const title=document.createElement('h4');title.textContent=(rule.checkedDocument?rule.checkedDocument+' · ':'')+rule.id+' · '+rule.title;
-    const tag=document.createElement('span');tag.className='rq-pill '+rule.status;tag.textContent=rule.status==='pass'?'正确':'错误';
+    const tag=document.createElement('span');tag.className='rq-pill '+(automated?rule.status:'not-automated');tag.textContent=automated?(rule.status==='pass'?'正确':'错误'):'未纳入对错统计';
     head.append(title,tag);
     const original=document.createElement('p');original.textContent='规则原文：'+(rule.originalText||rule.text||'');
     const source=document.createElement('div');source.className='rq-source';source.textContent='来源：'+(rule.sourceFile||rule.source||'未注明')+(rule.sourceParagraph?' · 第 '+rule.sourceParagraph+' 段':'');
-    const actual=document.createElement('p');actual.className='rq-result';actual.textContent='实际检测值：'+(rule.actualValue||rule.detail||'未执行可靠的自动检测');
+    const actual=document.createElement('p');actual.className='rq-result';actual.textContent='实际检测值：'+(rule.actualValue||rule.detail||'尚无可靠的自动检测值');
     const evidence=document.createElement('p');evidence.className='rq-source';evidence.textContent='判断依据：'+(rule.evidence||'当前检测器没有足够证据确认合规或违规。');
-    const advice=document.createElement('p');advice.className='rq-advice';advice.textContent='修改建议：'+(rule.recommendation||rule.action||(rule.status==='fail'?'按模板要求修正后重新检测。':'当前未发现此项不符。'));
+    const advice=document.createElement('p');advice.className='rq-advice';advice.textContent='修改建议：'+(rule.recommendation||rule.action||(automated&&rule.status==='fail'?'按模板要求修正后重新检测。':'当前没有自动修改建议。'));
     item.append(head,original,source,actual,evidence,advice);target.append(item);
-  }
+  };
+  for(const rule of audit.requirements)renderRule(rule,true);
+  for(const rule of notAutomated)renderRule(rule,false);
 }
 function renderFindings(result,filter){
   const container=el('findings');container.replaceChildren();
