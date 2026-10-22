@@ -112,11 +112,11 @@ def test_strict_ooxml_template_and_rule_inventory(local_page):
       const m=await import(src);const paper=document.querySelector('#paper').files[0],template=document.querySelector('#template').files[0];
       const model=await (await import(docx)).parseDocxModel(template);
       const a=await m.createRulesAudit(paper,{templateFile:template});
-      return {ns:model.namespace,paragraphs:model.paragraphs.length,total:a.stats.total,fail:a.stats.fail,types:a.requirements.map(x=>x.check),sources:a.requirements.map(x=>x.source),requirements:a.requirements};
+      return {ns:model.namespace,paragraphs:model.paragraphs.length,total:a.stats.total,notAutomated:a.stats.notAutomated,fail:a.stats.fail,types:a.requirements.map(x=>x.check),sources:[...a.requirements,...a.notAutomated].map(x=>x.source),requirements:a.requirements};
     }''',{"src":src,"docx":docx_src})
     assert actual['ns']=='http://purl.oclc.org/ooxml/wordprocessingml/main'
     assert actual['paragraphs']>=3
-    assert actual['total']>=3
+    assert actual['total']+actual['notAutomated']>=3
     assert actual['fail']==0
     assert 'tabs' in actual['types']
     assert all(('模板第' in s or 'styles.xml' in s or 'sectPr' in s) for s in actual['sources'])
@@ -139,10 +139,10 @@ def test_builtin_profile_works_without_template(local_page):
     src=module_url('rules-engine.js')
     actual=local_page.evaluate('''async src => {
       const m=await import(src);const a=await m.createRulesAudit(document.querySelector('#paper').files[0],{profileId:'electrical-en'});
-      return {name:a.name,stats:a.stats,hasAi:a.requirements.some(x=>x.id.startsWith('AI-'))};
+      return {name:a.name,stats:a.stats,allRules:a.requirements.length+a.notAutomated.length,hasAi:a.requirements.some(x=>x.id.startsWith('AI-'))};
     }''',src)
     assert '电气' in actual['name']
-    assert actual['stats']['total']>=6
+    assert actual['allRules']>=6
     assert actual['hasAi'] is False
 
 def test_chinese_guidelines_keep_source_and_exclude_unsupported_checks(local_page):
