@@ -356,7 +356,7 @@ def test_direct_paragraph_alignment_overrides_are_compared(page):
     run_check(page)
     rows=page.locator('.requirement-item').all_inner_texts()
     assert any('段落对齐' in x and '左对齐' in x and '居中' in x for x in rows), rows
-    assert any('待核验' in x for x in rows), rows
+    assert any('未纳入对错统计' in x for x in rows), rows
 
 
 def test_rule_panel_identifies_each_checked_manuscript(page):
