@@ -61,8 +61,10 @@ def test_semantic_word_and_strict_template_as_real_site(live_page):
     assert result['coverage']['references']==13
     assert result['coverage']['citations']==13
     assert not [f for f in result['findings'] if f['code'] in ('CITE-NOT-FOUND','REF-NOT-FOUND')]
-    assert result['rulesAudit']['stats']['total']>=3
-    assert all(row.get('originalText') and (row.get('sourceFile') or row.get('source')) for row in result['rulesAudit']['requirements'])
+    assert result['rulesAudit']['stats']['total']>=2
+    all_rules=result['rulesAudit']['requirements']+result['rulesAudit'].get('notAutomated', [])
+    assert len(all_rules)>=3
+    assert all(row.get('originalText') and (row.get('sourceFile') or row.get('source')) for row in all_rules)
 
 def test_select_builtin_profile_without_template_and_export_report(live_page):
     p=live_page
