@@ -1,88 +1,67 @@
-# Visibility, sharing and adoption plan
+# PaperAudit: practical discovery and adoption plan
 
-This document is a practical, low-noise outreach checklist for PaperAudit. The goal is **real users, useful feedback and repeatable maintenance**, not artificial stars or traffic. Re-check each community's current rules before posting.
+The goal is to help the right researchers discover a useful tool, complete a first audit, and give actionable feedback. Do not buy stars, manufacture users, spam communities, or claim traffic that has not been measured.
 
-## 1. Make the first visit successful
+## 1. The one link to share
 
-- Link directly to the live tool, not just the repository. A new visitor should be able to try the synthetic sample without registration.
-- Keep the privacy promise precise: normal checks run in the browser; optional WebLLM downloads third-party assets and is experimental until real inference passes a supported-browser smoke test.
-- Link prominent source-code and bug-report actions from the homepage.
-- Use the current stable website honestly. Describe the v0.5.0 Strict OOXML work as a preview until PR #3 is merged and the deployed site is verified.
-- Invite **one useful action**: try the sample and report a reproducible issue, or star the repository if the project is genuinely useful.
+- **Live demo:** https://wcwce00-glitch.github.io/PaperAudit/
+- **Repository / Star:** https://github.com/wcwce00-glitch/PaperAudit
+- **Issues and reproducible feedback:** https://github.com/wcwce00-glitch/PaperAudit/issues/new
 
-## 2. Complete repository discoverability settings
+For first-time visitors, recommend the built-in sample first. It reduces friction and avoids asking people to upload unpublished manuscripts just to understand the product.
 
-On GitHub, open the repository, then use the **About** gear and repository Settings.
+## 2. Before outreach
 
-Suggested description:
+- Verify the live Pages build and its core assets after the relevant PRs merge and deploy.
+- Keep README, website, and social copy aligned with features that are actually available on the live `main` build.
+- Add a repository website URL and relevant topics using the GitHub repository **About** panel. Suggested topics: `academic-writing`, `docx`, `ooxml`, `manuscript`, `research-tools`, `open-science`, `document-processing`, `citation-checker`, `privacy-first`.
+- Set a clear social preview image in **Settings → Social preview**. Use a synthetic example only; never expose a real paper, personal data, or private publisher template.
+- If eligible, verify the Pages domain in Google Search Console, inspect the homepage, and submit `https://wcwce00-glitch.github.io/PaperAudit/sitemap.xml`. Sitemap submission is only a discovery hint, not a promise of indexing or ranking.
 
-> Privacy-first browser-based DOCX preflight for research manuscripts: captions, citations, image PPI, and traceable template checks.
+Official references: [Customize a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository), [repository topics](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/classifying-your-repository-with-topics), [social preview](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/customizing-your-repositorys-social-media-preview), [Google sitemap report](https://support.google.com/webmasters/answer/7451001).
 
-Suggested website:
+## 3. Short launch copy
 
-> https://wcwce00-glitch.github.io/PaperAudit/
+### Simplified Chinese
 
-Suggested topics (choose those most relevant to the intended audience):
-
-`academic-writing`, `docx`, `ooxml`, `manuscript`, `research-tools`, `open-science`, `document-processing`, `citation-checker`, `privacy-first`, `javascript`, `github-pages`
-
-In **Settings → Social preview**, upload a clear branded PNG/JPG/GIF preview under 1 MB. GitHub recommends at least 640×320 px and 1280×640 px for best display. Do not use a screenshot containing a real manuscript or confidential text.
-
-Official guidance: [customize your repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository), [repository topics](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/classifying-your-repository-with-topics), [social preview](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/customizing-your-repositorys-social-media-preview).
-
-## 3. Help search engines discover the live site
-
-The site publishes a canonical URL, page description, crawler rules and a sitemap. After a merge/deployment:
-
-1. Verify ownership of the site in [Google Search Console](https://search.google.com/search-console/about) if you control a suitable property.
-2. Use URL Inspection to inspect the public homepage; submit `https://wcwce00-glitch.github.io/PaperAudit/sitemap.xml` in the Sitemaps report.
-3. Check that the deployed page really reflects the intended release and that key assets return HTTP 200.
-4. Check GitHub's **Insights → Traffic** periodically. Look at visitors, popular content and referrers instead of treating repository stars as the only measure.
-5. Give crawlers time to revisit the site. Sitemap submission is a discovery hint, not a guarantee of indexing, ranking or a particular search-result appearance.
-
-References: [Google's sitemap report](https://support.google.com/webmasters/answer/7451001), [software app structured data guidance](https://developers.google.com/search/docs/appearance/structured-data/software-app).
-
-## 4. Reach the right audiences
-
-Start with communities where DOCX, research writing, reproducible science, open-source utilities or scholarly publishing are already being discussed. A useful post should explain the problem solved, link to a working demo, state the limitations, and invite a concrete kind of feedback.
-
-Potential channels:
-- Academic writing and research-support groups; ask librarians, writing-centre staff and research-software communities whether they would trial the tool.
-- Relevant professional networks (for example, an authentic LinkedIn post aimed at researchers or research-software developers).
-- Reddit communities only when their current rules permit project sharing. Participate genuinely and do not cross-post identical promos or send unsolicited messages. Reddit warns that repeated unwanted promotion can be treated as spam: [official spam guidance](https://support.reddithelp.com/hc/en-us/articles/360043504051-Spam).
-- Hacker News only when its current submission rules permit it and the project is ready for discussion. As checked on 2026-10-18, its Show HN page says it is temporarily restricting Show HN posts from users unfamiliar with the community; do not attempt to bypass that restriction. Read the [current Show HN guidance](https://news.ycombinator.com/showlim) and [site guidelines](https://news.ycombinator.com/newsguidelines.html) first.
-
-Do not buy stars, ask people to manipulate votes, mass-post links, or claim a user base that does not exist. Respond to criticism and ship fixes; credible maintenance tends to build trust more durably than one burst of promotion.
-
-## 5. Ready-to-edit launch copy
+> 我做了一个免费的开源小工具 PaperAudit，想解决一个很具体的问题：投稿前，快速检查 Word 论文里一部分常见的图表标题/引用、数字型参考文献和图片有效分辨率问题；如果有目标模板，也可以对照当前支持的页面设置、样式和明确要求。普通检查默认在浏览器本地运行，并可导出 HTML / JSON 报告。
+>
+> 可以先用示例体验，不必上传自己的论文： https://wcwce00-glitch.github.io/PaperAudit/
+>
+> 源码： https://github.com/wcwce00-glitch/PaperAudit
+>
+> 目前还在持续改进，特别欢迎可复现的误报、漏报、中文模板解析和浏览器兼容性反馈。它不是期刊合规认证，也不能自动理解所有 Word 格式和自然语言要求。请不要在公开反馈里上传未发表论文或私人模板。如果工具对你有帮助，欢迎给 GitHub 仓库点 Star，让更多研究者有机会发现它。
 
 ### English
 
-> PaperAudit is a free, open-source browser tool for preflighting Word research manuscripts. It checks common figure/table caption and cross-reference issues, basic bracket-numbered citations, and supported embedded PNG/JPEG effective PPI. Normal document checks run locally in the browser, with HTML and JSON report export.
+> I’m building PaperAudit, a free, open-source browser tool for preflighting Word research manuscripts. It checks a supported subset of figure/table captions and references, basic numeric citations, and effective PPI for supported embedded images. With a target template, it can compare readable page settings, matched styles, and explicit requirements supported by current checkers. Ordinary checks run locally in the browser, with HTML/JSON report export.
 >
-> Try the live demo: https://wcwce00-glitch.github.io/PaperAudit/
+> Try the sample without uploading your own paper: https://wcwce00-glitch.github.io/PaperAudit/
 >
-> Source and issues: https://github.com/wcwce00-glitch/PaperAudit
+> Source: https://github.com/wcwce00-glitch/PaperAudit
 >
-> I welcome reproducible feedback on false positives, synthetic DOCX numbering cases, accessibility and browser compatibility. Please do not post unpublished manuscripts or private publisher templates. The Strict OOXML v0.5.0 preview is under review; the optional WebLLM path is experimental.
+> I welcome reproducible false-positive/false-negative reports, Chinese template examples made from synthetic data, and browser-compatibility feedback. This is a preflight assistant, not a journal-compliance certification, and it cannot interpret every Word feature or natural-language rule. Please do not post unpublished manuscripts or private templates. If it helps your workflow, a GitHub Star helps other researchers discover it.
 
-### 简体中文
+Personalize each post for the audience and disclose that you are the maintainer. Do not paste identical promotions into many communities.
 
-> PaperAudit 是免费的开源 Word 论文投稿前预检工具，可检查常见图题/表题及正文引用、基础数字型参考文献，并对支持的内嵌 PNG/JPEG 提供有效 PPI 提示。普通检查在浏览器本地运行，可导出 HTML / JSON 报告。
->
-> 在线体验：https://wcwce00-glitch.github.io/PaperAudit/
->
-> 源码与问题反馈：https://github.com/wcwce00-glitch/PaperAudit
->
-> 欢迎反馈可复现的误报、合成 DOCX 编号案例、无障碍问题和浏览器兼容性。请勿公开未发表论文或私人期刊模板。v0.5.0 Strict OOXML 升级仍在审查中，可选 WebLLM 功能仍处于实验阶段。
+## 4. Where to share thoughtfully
 
-Edit the copy into your own voice for each community; do not post it unchanged to many places.
+Start with a few relevant places rather than broadcasting everywhere:
 
-## 6. Cadence and success measures
+- Research-software and open-science groups that welcome project demos.
+- University library, research-support, writing-centre, and graduate-student communities; ask for usability feedback, not endorsements.
+- A personal professional-network post aimed at researchers who use Word templates.
+- Relevant Reddit communities only when their current rules permit project sharing. Participate genuinely and do not cross-post identical promotions. Read [Reddit's spam guidance](https://support.reddithelp.com/hc/en-us/articles/360043504051-Spam).
+- Hacker News only when current submission rules permit it. Read [Show HN guidance](https://news.ycombinator.com/showlim) and [site guidelines](https://news.ycombinator.com/newsguidelines.html); never try to bypass posting restrictions.
 
-- **After deployment:** verify the live build, repository About section, social preview and Search Console.
-- **First week:** invite a small number of relevant researchers to try the sample and file concrete issues; respond to each report.
-- **After feedback:** ship one meaningful usability or false-positive improvement, then share the change with an example.
-- **Monthly:** review GitHub Traffic, incoming issues/PRs, external referrals and whether first-time users complete a sample audit.
+Avoid unsolicited mass messages and paid star campaigns. A specific, reproducible demo and a transparent limitation statement build more trust than hype.
 
-A useful initial success signal is a stranger reporting a real, reproducible problem or successfully completing an audit—not a vanity metric. Keep a dated changelog of what was actually tested and released.
+## 5. A realistic first-month cadence
+
+- **After release:** test the public demo on desktop/mobile-sized viewports, check links, and confirm the deployed version matches the README.
+- **Week 1:** share with a small number of relevant researchers and ask them to complete the sample audit; capture where they get stuck.
+- **Week 2:** fix one real onboarding or false-positive problem, then share the concrete change and test evidence.
+- **Week 3:** publish one synthetic before/after example showing what the tool can and cannot detect.
+- **Week 4:** review GitHub **Insights → Traffic**, referrers, issues, PRs, and sample completion feedback. Do not infer success from stars alone.
+
+A useful early signal is an unfamiliar user successfully completing an audit or reporting a reproducible issue. Keep claims tied to measured results.
