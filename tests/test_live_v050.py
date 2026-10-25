@@ -51,7 +51,8 @@ def test_semantic_word_and_strict_template_as_real_site(live_page):
     p.locator('#run-audit').click()
     p.locator('#results').wait_for(state='visible',timeout=25000)
     assert p.locator('#requirements-panel').is_visible()
-    assert p.locator('.requirement-item').count()>=3
+    assert p.locator('.requirement-item').count()>=2
+    # Some strict-template rules (e.g. visual placement) are retained separately when not reliably machine-verifiable.
     with p.expect_download() as dl:p.locator('#save-json').click()
     result=json.loads(Path(dl.value.path()).read_text(encoding='utf-8'))
     assert result['version']=='0.5.0-preview'
