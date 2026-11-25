@@ -83,6 +83,7 @@ Edit the copy into your own voice for each community; do not post it unchanged t
 - **After deployment:** verify the live build, repository About section, social preview and Search Console.
 - **First week:** invite a small number of relevant researchers to try the sample and file concrete issues; respond to each report.
 - **After feedback:** ship one meaningful usability or false-positive improvement, then share the change with an example.
-- **Monthly:** review GitHub Traffic, incoming issues/PRs, external referrals and whether first-time users complete a sample audit.
+- **Weekly:** record GitHub stars, repository visitors, referrers, demo visits (if separately instrumented), incoming issues/PRs, and qualitative feedback. Do not treat clones as confirmed users.
+- **Monthly:** review whether first-time users complete a sample audit and which checks cause confusion.
 
 A useful initial success signal is a stranger reporting a real, reproducible problem or successfully completing an audit—not a vanity metric. Keep a dated changelog of what was actually tested and released.
