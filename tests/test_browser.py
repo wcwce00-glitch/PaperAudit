@@ -240,8 +240,10 @@ def test_uploaded_template_page_difference_and_explicit_section(page):
     import json
     result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
     assert result['template']['verifiedOfficial'] is False
-    assert any('摘要' in x['originalText'] for x in result['rulesAudit']['requirements'])
-    assert all(x['status'] in ('pass','fail','review') for x in result['rulesAudit']['requirements'])
+    all_rules = result['rulesAudit']['requirements'] + result['rulesAudit'].get('notAutomated', [])
+    assert any('摘要' in x['originalText'] for x in all_rules)
+    assert all(x['status'] in ('pass','fail') for x in result['rulesAudit']['requirements'])
+    assert all(x['status']=='not-automated' for x in result['rulesAudit'].get('notAutomated', []))
     assert len(result['template']['candidateInstructions'])>=1
     assert any(x['code']=='TEMPLATE-REQUIRED-SECTION' for x in result['findings']), result['findings']
 
@@ -254,7 +256,7 @@ def test_uploaded_template_page_size_mismatch(page):
     run_check(page)
     rows=page.locator('.requirement-item').all_inner_texts()
     assert any('已确认与上传模板存在可量化的页面版式差异' in x for x in rows), rows
-    assert any('S-paper' in x and '有证据支持不符' in x for x in rows), rows
+    assert any('S-paper' in x and '错误' in x for x in rows), rows
     with page.expect_download() as info:page.locator('#save-json').click()
     import json
     result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
@@ -336,7 +338,8 @@ def test_uploaded_template_drives_style_and_abstract_comparison(page):
     result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
     assert any(x['code']=='TEMPLATE-ABSTRACT-LIMIT' for x in result['findings']), result['findings']
     audit_rules=result['rulesAudit']['requirements']
-    assert any(x.get('checkedDocument')=='synthetic-manuscript.docx' and x['status']=='review' and 'Normal' in x['title'] for x in audit_rules), audit_rules
+    excluded=result['rulesAudit'].get('notAutomated', [])
+    assert any(x.get('checkedDocument')=='synthetic-manuscript.docx' and 'Normal' in x['title'] for x in excluded), excluded
     assert any(x['status']=='fail' and 'abstract' in x['title'].lower() for x in audit_rules), audit_rules
 
 
@@ -356,7 +359,7 @@ def test_direct_paragraph_alignment_overrides_are_compared(page):
     run_check(page)
     rows=page.locator('.requirement-item').all_inner_texts()
     assert any('段落对齐' in x and '左对齐' in x and '居中' in x for x in rows), rows
-    assert any('待核验' in x for x in rows), rows
+    assert any('未纳入对错统计' in x for x in rows), rows
 
 
 def test_rule_panel_identifies_each_checked_manuscript(page):
@@ -443,7 +446,7 @@ def test_explicit_template_text_removal_catches_paper_title_placeholder(page):
     run_check(page)
     rows=page.locator('.requirement-item').all_inner_texts()
     assert any('典型模板占位文字' in x and 'Paper Title*' in x for x in rows), rows
-    assert any('有证据支持不符' in x and 'Remove all template text' in x for x in rows), rows
+    assert any('错误' in x and 'Remove all template text' in x for x in rows), rows
 
 
 def test_common_caption_placement_phrasings_are_recognized_but_not_auto_failed(page):
@@ -469,7 +472,7 @@ def test_common_caption_placement_phrasings_are_recognized_but_not_auto_failed(p
     with page.expect_download() as info:
         page.locator('#save-json').click()
     result=json.loads(Path(info.value.path()).read_text(encoding='utf8'))
-    actual=result['rulesAudit']['requirements']
+    actual=result['rulesAudit'].get('notAutomated', [])
     assert sum(x.get('check')=='figurePlacement' for x in actual)==2, actual
     assert sum(x.get('check')=='tablePlacement' for x in actual)==2, actual
-    assert all(x['status']=='review' for x in actual if x.get('check') in ('figurePlacement','tablePlacement')), actual
+    assert all(x['status']=='not-automated' for x in actual if x.get('check') in ('figurePlacement','tablePlacement')), actual
