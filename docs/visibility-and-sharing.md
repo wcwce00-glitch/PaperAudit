@@ -7,7 +7,7 @@ This document is a practical, low-noise outreach checklist for PaperAudit. The g
 - Link directly to the live tool, not just the repository. A new visitor should be able to try the synthetic sample without registration.
 - Keep the privacy promise precise: normal checks run in the browser; optional WebLLM downloads third-party assets and is experimental until real inference passes a supported-browser smoke test.
 - Link prominent source-code and bug-report actions from the homepage.
-- Use the current stable website honestly. Describe the v0.5.0 Strict OOXML work as a preview until PR #3 is merged and the deployed site is verified.
+- Describe the product honestly as a v0.5.0 preview until broad real-world validation is complete. PR and deployment badges show current automation status; do not infer that every journal rule is supported from a green CI run.
 - Invite **one useful action**: try the sample and report a reproducible issue, or star the repository if the project is genuinely useful.
 
 ## 2. Complete repository discoverability settings
@@ -64,7 +64,7 @@ Do not buy stars, ask people to manipulate votes, mass-post links, or claim a us
 >
 > Source and issues: https://github.com/wcwce00-glitch/PaperAudit
 >
-> I welcome reproducible feedback on false positives, synthetic DOCX numbering cases, accessibility and browser compatibility. Please do not post unpublished manuscripts or private publisher templates. The Strict OOXML v0.5.0 preview is under review; the optional WebLLM path is experimental.
+> I welcome reproducible feedback on false positives, synthetic DOCX numbering cases, accessibility and browser compatibility. Please do not post unpublished manuscripts or private publisher templates. The v0.5.0 template-checking workflow is a preview; check the current CI results for public-template regression coverage. The optional WebLLM path is experimental.
 
 ### 简体中文
 
@@ -74,7 +74,7 @@ Do not buy stars, ask people to manipulate votes, mass-post links, or claim a us
 >
 > 源码与问题反馈：https://github.com/wcwce00-glitch/PaperAudit
 >
-> 欢迎反馈可复现的误报、合成 DOCX 编号案例、无障碍问题和浏览器兼容性。请勿公开未发表论文或私人期刊模板。v0.5.0 Strict OOXML 升级仍在审查中，可选 WebLLM 功能仍处于实验阶段。
+> 欢迎反馈可复现的误报、合成 DOCX 编号案例、无障碍问题和浏览器兼容性。请勿公开未发表论文或私人期刊模板。v0.5.0 模板核查功能仍是预览版；请查看最新 CI 结果了解公开模板回归验证状态。可选 WebLLM 功能仍处于实验阶段。
 
 Edit the copy into your own voice for each community; do not post it unchanged to many places.
 
